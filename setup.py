@@ -20,7 +20,7 @@ setup(
 		'python-dotenv>=1.0',
 		'pandas>=1.0',
         'matplotlib>=3.0',
-		"websockets==9.1",
+		"websockets~=14.1",
         'asyncio'  			# asyncio is included in the standard library for Python 3.7 and later - unneeded if using these versions.
     ]
 )
