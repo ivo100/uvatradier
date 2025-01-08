@@ -1,169 +1,169 @@
 import requests
 import pandas as pd
-from requests.exceptions import RequestException, JSONDecodeError;
+from requests.exceptions import RequestException, JSONDecodeError
 
 from .base import Tradier
 
 class Account (Tradier):
 	def __init__ (self, account_number, auth_token, live_trade=False):
-		Tradier.__init__(self, account_number, auth_token, live_trade);
+		Tradier.__init__(self, account_number, auth_token, live_trade)
 		
 		#
 		# Account endpoints
 		#
 
-		self.PROFILE_ENDPOINT = "v1/user/profile"; 													# GET
+		self.PROFILE_ENDPOINT = "v1/user/profile" 													# GET
 
-		self.POSITIONS_ENDPOINT = f"v1/accounts/{account_number}/positions";  						# GET
+		self.POSITIONS_ENDPOINT = f"v1/accounts/{account_number}/positions"  						# GET
 
-		self.ACCOUNT_BALANCE_ENDPOINT  	= f"v1/accounts/{account_number}/balances"; 	 			# GET
-		self.ACCOUNT_GAINLOSS_ENDPOINT 	= f"v1/accounts/{account_number}/gainloss"; 		 		# GET
-		self.ACCOUNT_HISTORY_ENDPOINT 	= f"v1/accounts/{account_number}/history"; 			 		# GET
-		self.ACCOUNT_POSITIONS_ENDPOINT = f"v1/accounts/{account_number}/positions"; 		 		# GET
+		self.ACCOUNT_BALANCE_ENDPOINT  	= f"v1/accounts/{account_number}/balances" 	 			# GET
+		self.ACCOUNT_GAINLOSS_ENDPOINT 	= f"v1/accounts/{account_number}/gainloss" 		 		# GET
+		self.ACCOUNT_HISTORY_ENDPOINT 	= f"v1/accounts/{account_number}/history" 			 		# GET
+		self.ACCOUNT_POSITIONS_ENDPOINT = f"v1/accounts/{account_number}/positions" 		 		# GET
 
-		self.ORDER_ENDPOINT = f"v1/accounts/{account_number}/orders"; 					 			# GET
+		self.ORDER_ENDPOINT = f"v1/accounts/{account_number}/orders" 					 			# GET
 
 	def get_user_profile (self, is_sole_account=False):
-		'''
-		Fetch the user profile's account information from the Tradier Account API.
+		"""
+        Fetch the user profile's account information from the Tradier Account API.
 
-		This function makes a GET request to the Tradier Account API. For each account associated with your profile, it provides basic information
-		such as created/last-updated dates, option trading level, account's margin status, etc...
+        This function makes a GET request to the Tradier Account API. For each account associated with your profile, it provides basic information
+        such as created/last-updated dates, option trading level, account's margin status, etc...
 
-		Args (Optional):
-			• is_sole_account (bool): If you only have 1 account with Tradier under your profile, and you want your account info in a Pandas Series instead of the first (and what would be, in this case, the only) row of a DataFrame.
+        Args (Optional):
+            • is_sole_account (bool): If you only have 1 account with Tradier under your profile, and you want your account info in a Pandas Series instead of the first (and what would be, in this case, the only) row of a DataFrame.
 
-		Returns:
-		    • pandas.DataFrame: A DataFrame containing user profile information.
+        Returns:
+            • pandas.DataFrame: A DataFrame containing user profile information.
 
-		Notes:
-		    • For profiles having n-accounts, n ≥ 2, each account will be a row in the returned DataFrame. ***
-		    *** (i'm pretty sure this is true, but as I've only 1 account to my name right now, I can't actually test to confirm yet.) ***
+        Notes:
+            • For profiles having n-accounts, n ≥ 2, each account will be a row in the returned DataFrame. ***
+            *** (i'm pretty sure this is true, but as I've only 1 account to my name right now, I can't actually test to confirm yet.) ***
 
-		Example:
-		    # Create `Account` object with account number and authorization token credentials.
-		    >>> acct = Account(tradier_acct, tradier_token)
+        Example:
+            # Create `Account` object with account number and authorization token credentials.
+            >> acct = Account(tradier_acct, tradier_token)
 
-		    # Return information about account(s) as row(s) in DataFrame.
-		    >>> acct.get_user_profile()
-		                     id            name account.account_number account.classification      account.date_created  account.day_trader  account.option_level account.status account.type  account.last_update_date
-		    0  id-sb-3a13swkrbv  Harry Christopher Caray             VA44632119             individual  2021-06-23T22:04:20.000Z               False                     6         active       margin  2021-06-23T22:04:20.000Z
+            # Return information about account(s) as row(s) in DataFrame.
+            >> acct.get_user_profile()
+                             id            name account.account_number account.classification      account.date_created  account.day_trader  account.option_level account.status account.type  account.last_update_date
+            0  id-sb-3a13swkrbv  Harry Christopher Caray             VA44632119             individual  2021-06-23T22:04:20.000Z               False                     6         active       margin  2021-06-23T22:04:20.000Z
 
-		    # Return account information as Series.
-		    >>> acct.get_user_profile(True)
-		    id                                  id-sb-3a13swkrbv
-		    name                         Harry Christopher Caray
-		    account.account_number                    VA44632119
-		    account.classification                    individual
-		    account.date_created        2021-06-23T22:04:20.000Z
-		    account.day_trader                             False
-		    account.option_level                               6
-		    account.status                                active
-		    account.type                                  margin
-		    account.last_update_date    2021-06-23T22:04:20.000Z
-		    Name: 0, dtype: object
-		'''
+            # Return account information as Series.
+            >> acct.get_user_profile(True)
+            id                                  id-sb-3a13swkrbv
+            name                         Harry Christopher Caray
+            account.account_number                    VA44632119
+            account.classification                    individual
+            account.date_created        2021-06-23T22:04:20.000Z
+            account.day_trader                             False
+            account.option_level                               6
+            account.status                                active
+            account.type                                  margin
+            account.last_update_date    2021-06-23T22:04:20.000Z
+            Name: 0, dtype: object
+        """
 
 		try:
 			r = requests.get(
 				url 	= f"{self.BASE_URL}/{self.PROFILE_ENDPOINT}",
 				params 	= {},
 				headers = self.REQUESTS_HEADERS
-			);
+			)
 
 			# We good?
-			r.raise_for_status();
+			r.raise_for_status()
 
 			if 'profile' not in r.json():
-				raise KeyError("API response missing 'profile'");
+				raise KeyError("API response missing 'profile'")
 
-			return pd.json_normalize(r.json()['profile']) if not is_sole_account else pd.json_normalize(r.json()['profile']).iloc[0];
+			return pd.json_normalize(r.json()['profile']) if not is_sole_account else pd.json_normalize(r.json()['profile']).iloc[0]
 
 		except requests.exceptions.RequestException as e:
-			print(f"ERROR [garbage request, get_user_profile] -> {e}");
-			return pd.DataFrame() if not is_sole_account else pd.Series();
+			print(f"ERROR [garbage request, get_user_profile] -> {e}")
+			return pd.DataFrame() if not is_sole_account else pd.Series()
 
 		except KeyError as e:
-			print(f"ERROR: [key drama, get_user_profile] -> {e}");
-			return pd.DataFrame() if not is_sole_account else pd.Series();
+			print(f"ERROR: [key drama, get_user_profile] -> {e}")
+			return pd.DataFrame() if not is_sole_account else pd.Series()
 
 	def get_account_balance (self, return_as_series=False):
-		'''
-		Fetch the account balance information from the Tradier Account API.
+		"""
+        Fetch the account balance information from the Tradier Account API.
 
-		This function makes a GET request to the Tradier Account API. It returns current balance information for the account associated with the account number argument provided.
-		This includes cash balances, open/close P&L, short/long equity/options positions, margin info, etc... (see example below for full field list returned).
+        This function makes a GET request to the Tradier Account API. It returns current balance information for the account associated with the account number argument provided.
+        This includes cash balances, open/close P&L, short/long equity/options positions, margin info, etc... (see example below for full field list returned).
 
-		Args (Optional):
-			• return_as_series (bool, default=False): If True is passed, the function will return the account balance data in a Pandas Series object. Otherwise, it returns a DataFrame.
+        Args (Optional):
+            • return_as_series (bool, default=False): If True is passed, the function will return the account balance data in a Pandas Series object. Otherwise, it returns a DataFrame.
 
-		Returns:
-		    • (default) If return_as_series = False -> returns single row Pandas DataFrame with account balance fields denoted in the columns.
-		    • If return_as_series = True -> returns Pandas Series.
+        Returns:
+            • (default) If return_as_series = False -> returns single row Pandas DataFrame with account balance fields denoted in the columns.
+            • If return_as_series = True -> returns Pandas Series.
 
-		Notes:
-			• There are several fields related to each account's margin (fed_call, maintenance_call, option/stock_buying_power, stock_short_value, sweep).
-				• If DataFrame returned -> each margin-field will be a column of the one row dataframe.
-				• If Seires returned -> there will be a 'margin' index label whose value is a dictionary containing margin-field labels/values.
+        Notes:
+            • There are several fields related to each account's margin (fed_call, maintenance_call, option/stock_buying_power, stock_short_value, sweep).
+                • If DataFrame returned -> each margin-field will be a column of the one row dataframe.
+                • If Seires returned -> there will be a 'margin' index label whose value is a dictionary containing margin-field labels/values.
 
-		Example:
-		    # Initialize Account object
-		    >>> acct = Account(tradier_acct, tradier_token)
+        Example:
+            # Initialize Account object
+            >> acct = Account(tradier_acct, tradier_token)
 
-		    # Retrieve account balance info as DataFrame
-		    >>> acct.get_account_balance()
-		       option_short_value  total_equity account_number account_type  close_pl  current_requirement  ...  margin.fed_call  margin.maintenance_call  margin.option_buying_power  margin.stock_buying_power  margin.stock_short_value  margin.sweep
-		    0             -5874.0   163905.3018     VA44632119       margin         0            141960.75  ...                0                        0                  12527.8018                 25055.6036                         0             0
-		    [1 rows x 24 columns]
+            # Retrieve account balance info as DataFrame
+            >> acct.get_account_balance()
+               option_short_value  total_equity account_number account_type  close_pl  current_requirement  ...  margin.fed_call  margin.maintenance_call  margin.option_buying_power  margin.stock_buying_power  margin.stock_short_value  margin.sweep
+            0             -5874.0   163905.3018     VA44632119       margin         0            141960.75  ...                0                        0                  12527.8018                 25055.6036                         0             0
+            [1 rows x 24 columns]
 
-		    # Retrieve account balance info as Series
-			>>> acct.get_account_balance(True)
-			option_short_value                                                -5874.0
-			total_equity                                                  163905.3018
-			account_number                                                 VA44632119
-			account_type                                                       margin
-			close_pl                                                                0
-			current_requirement                                             141960.75
-			equity                                                                  0
-			long_market_value                                                   232.0
-			market_value                                                      -5642.0
-			open_pl                                                             334.0
-			option_long_value                                                       0
-			option_requirement                                               159353.5
-			pending_orders_count                                                    0
-			short_market_value                                                -5874.0
-			stock_long_value                                                    232.0
-			total_cash                                                    169547.3018
-			uncleared_funds                                                         0
-			pending_cash                                                            0
-			margin                  {'fed_call': 0, 'maintenance_call': 0, 'option...
-			dtype: object
-		'''
+            # Retrieve account balance info as Series
+            >> acct.get_account_balance(True)
+            option_short_value                                                -5874.0
+            total_equity                                                  163905.3018
+            account_number                                                 VA44632119
+            account_type                                                       margin
+            close_pl                                                                0
+            current_requirement                                             141960.75
+            equity                                                                  0
+            long_market_value                                                   232.0
+            market_value                                                      -5642.0
+            open_pl                                                             334.0
+            option_long_value                                                       0
+            option_requirement                                               159353.5
+            pending_orders_count                                                    0
+            short_market_value                                                -5874.0
+            stock_long_value                                                    232.0
+            total_cash                                                    169547.3018
+            uncleared_funds                                                         0
+            pending_cash                                                            0
+            margin                  {'fed_call': 0, 'maintenance_call': 0, 'option...
+            dtype: object
+        """
 
 		try:
 			r = requests.get(
 				url = f"{self.BASE_URL}/{self.ACCOUNT_BALANCE_ENDPOINT}",
 				params = {},
 				headers = self.REQUESTS_HEADERS
-			);
+			)
 
 			# We good?
-			r.raise_for_status();
+			r.raise_for_status()
 
 			if 'balances' not in r.json():
-				raise KeyError("API response missing 'balances'");
+				raise KeyError("API response missing 'balances'")
 
-			return pd.json_normalize(r.json()['balances']) if not return_as_series else pd.Series(r.json()['balances']);
+			return pd.json_normalize(r.json()['balances']) if not return_as_series else pd.Series(r.json()['balances'])
 
 		except requests.exceptions.RequestException as e:
-			print(f"ERROR [bad request, f(x) = Account.get_account_balance] -> {e}");
-			return pd.DataFrame() if not return_as_series else pd.Series();
+			print(f"ERROR [bad request, f(x) = Account.get_account_balance] -> {e}")
+			return pd.DataFrame() if not return_as_series else pd.Series()
 		except KeyError as e:
-			print(f"ERROR [bad key, f(x) = Account.get_user_profile] -> {e}");
-			return pd.DataFrame() if not return_as_series else pd.Series();
+			print(f"ERROR [bad key, f(x) = Account.get_user_profile] -> {e}")
+			return pd.DataFrame() if not return_as_series else pd.Series()
 
 	def get_gainloss (self, page=1, limit=100, sort_by='closeDate', sort_direction='desc', start_date=None, end_date=None, symbol_filter=None):
-		'''
+		"""
 		Args (All Optional):
 			• page (int): Page from which to begin returning records.
 			• limit (int): Number of records to return on each page.
@@ -254,7 +254,7 @@ class Account (Tradier):
 			99  2024-08-30T00:00:00.000Z  1654.38     -13.16              -0.80  2024-08-29T00:00:00.000Z   1641.22      14.0    XOM     1
 
 			[100 rows x 9 columns]
-		'''
+		"""
 
 		#
 		# Construct HTTP GET Request Parameters
@@ -265,70 +265,70 @@ class Account (Tradier):
 			'limit': limit,
 			'sortBy': sort_by,
 			'sort': sort_direction,
-		};
+		}
 
 		if symbol_filter is not None:
-			params['symbol'] = symbol_filter.upper();
+			params['symbol'] = symbol_filter.upper()
 
 		if start_date is not None:
-			params['start'] = start_date;
+			params['start'] = start_date
 
 		if end_date is not None:
-			params['end'] = end_date;
+			params['end'] = end_date
 
 		try:
 			r = requests.get(
 				url 	= f"{self.BASE_URL}/{self.ACCOUNT_GAINLOSS_ENDPOINT}",
 				params 	= params,
 				headers = self.REQUESTS_HEADERS
-			);
-			r.raise_for_status();
+			)
+			r.raise_for_status()
 
-			data = r.json();
+			data = r.json()
 
 			#
 			# Validate Contents of Response from Tradier
 			#
 
 			if not data:
-				print("No data received from API");
-				return pd.DataFrame();
+				print("No data received from API")
+				return pd.DataFrame()
 
 			if 'gainloss' not in data:
-				print("API response missing 'gainloss'");
-				print(f"Received: {r.json()}");
-				return pd.DataFrame();
+				print("API response missing 'gainloss'")
+				print(f"Received: {r.json()}")
+				return pd.DataFrame()
 
 			if 'closed_position' not in data['gainloss']:
-				print("API response missing 'closed_position'");
-				print(f"Received: {r.json()}");
-				return pd.DataFrame();
+				print("API response missing 'closed_position'")
+				print(f"Received: {r.json()}")
+				return pd.DataFrame()
 
-			closed_positions = data['gainloss']['closed_position'];
+			closed_positions = data['gainloss']['closed_position']
 			if not closed_positions:
-				print("No closed positions.");
-				return pd.DataFrame();
+				print("No closed positions.")
+				return pd.DataFrame()
 
 			if isinstance(closed_positions, dict):
-				closed_positions = [closed_positions];
+				closed_positions = [closed_positions]
 
-			return pd.json_normalize(closed_positions);
+			return pd.json_normalize(closed_positions)
 
 		except JSONDecodeError as e:
-			print(f"ERROR - JSON response decoding: {e}");
-			return pd.DataFrame();
+			print(f"ERROR - JSON response decoding: {e}")
+			return pd.DataFrame()
 		except RequestException as e:
-			print(f"ERROR - HTTP Request failed: {e}");
-			return pd.DataFrame();
+			print(f"ERROR - HTTP Request failed: {e}")
+			return pd.DataFrame()
 		except KeyError as e:
-			print(f"ERROR - Unexpected API response: {e}");
-			return pd.DataFrame();
+			print(f"ERROR - Unexpected API response: {e}")
+			return pd.DataFrame()
 		except Exception as e:
-			print(f"ERROR - Unexpected garbage: {e}");
-			return pd.DataFrame();
+			print(f"ERROR - Unexpected garbage: {e}")
+			return pd.DataFrame()
 
 	def get_orders (self):
-		'''
+		"""
 		Retrieve orders recently submitted to Tradier. Provides information related to:
 			• Basic Order Info - symbol, trade, side, #shares, fill status.
 			• Order Fill Metrics - mean/last fill price, #shares filled/to-be-filled.
@@ -339,31 +339,31 @@ class Account (Tradier):
 
 		Example:
 		    # Create `Account` object with account number and authorization token credentials.
-		    >>> acct = Account(tradier_acct, tradier_token)
+		    >> acct = Account(tradier_acct, tradier_token)
 
 		    # Retrieve orders that were recently submitted (shown: 2 credit spread orders)
-		    >>> acct.get_orders()
+		    >> acct.get_orders()
 			         id    type symbol side  quantity  status duration  avg_fill_price  ...  last_fill_quantity  remaining_quantity               create_date          transaction_date     class num_legs strategy                                                leg
 			0  14327159  market    AON  buy       2.0  filled      day           -2.40  ...                 1.0                 0.0  2024-10-03T16:59:11.262Z  2024-10-03T16:59:11.537Z  multileg        2   spread  [{'id': 14327160, 'type': 'market', 'symbol': ...
 			1  14327360  market    DRI  buy       2.0  filled      day           -0.05  ...                 1.0                 0.0  2024-10-03T17:09:22.613Z  2024-10-03T17:09:22.853Z  multileg        2   spread  [{'id': 14327361, 'type': 'market', 'symbol': ...
 
 			[2 rows x 18 columns]
-		'''
+		"""
 
 		r = requests.get(
 			url 	= f"{self.BASE_URL}/{self.ORDER_ENDPOINT}",
 			params 	= {'includeTags':'true'},
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
 		if r.json()['orders'] == 'null':
 			print('You have no current orders.')
-			return pd.DataFrame();
+			return pd.DataFrame()
 
 		return pd.json_normalize(r.json()['orders']['order'])
 
 	def get_positions(self, symbols=False, equities=False, options=False):
-		'''
+		"""
 		Fetch and filter position data from the Tradier Account API.
 
 		This function makes a GET request to the Tradier Account API to retrieve position
@@ -393,37 +393,37 @@ class Account (Tradier):
 
 			# Retrieve only options
 			options_positions = account.get_positions(options=True)
-		'''
+		"""
 		try:
 			r = requests.get(
 				url 	= f"{self.BASE_URL}/{self.ACCOUNT_POSITIONS_ENDPOINT}",
 				params 	= {},
 				headers = self.REQUESTS_HEADERS
-			);
-			r.raise_for_status();
-			data = r.json();
+			)
+			r.raise_for_status()
+			data = r.json()
 		except requests.exceptions.RequestException as e:
-			print(f"Get Positions Request Failed: {e}");
-			return pd.DataFrame();
+			print(f"Get Positions Request Failed: {e}")
+			return pd.DataFrame()
 		except ValueError as e:
-			print(f"JSON decode error [getPositions]: {e}");
-			return pd.DataFrame();
+			print(f"JSON decode error [getPositions]: {e}")
+			return pd.DataFrame()
 
 		if data:
 			if 'positions' in data:
 				if 'position' in data['positions']:
-					positions_df = pd.DataFrame(pd.json_normalize(data['positions']['position']));
+					positions_df = pd.DataFrame(pd.json_normalize(data['positions']['position']))
 					if symbols:
-						positions_df = positions_df.query('symbol in @symbols');
+						positions_df = positions_df.query('symbol in @symbols')
 					if equities:
-						positions_df = positions_df[positions_df['symbol'].str.len() < 5];
-						options = False;
+						positions_df = positions_df[positions_df['symbol'].str.len() < 5]
+						options = False
 					if options:
-						positions_df = positions_df[positions_df['symbol'].str.len() > 5];
-					return positions_df;
+						positions_df = positions_df[positions_df['symbol'].str.len() > 5]
+					return positions_df
 				else:
-					return pd.DataFrame();
+					return pd.DataFrame()
 			else:
-				return pd.DataFrame();
+				return pd.DataFrame()
 		else:
-			return pd.DataFrame();
+			return pd.DataFrame()

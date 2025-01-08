@@ -4,24 +4,24 @@ import requests
 import datetime
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
-import warnings;
+
 from requests.exceptions import RequestException
 
 class Quotes (Tradier):
 	def __init__ (self, account_number, auth_token, live_trade=False):
-		Tradier.__init__(self, account_number, auth_token, live_trade);
+		Tradier.__init__(self, account_number, auth_token, live_trade)
 
 		#
 		# Quotes endpoints for market data about equities
 		#
 
-		self.QUOTES_ENDPOINT 				= "v1/markets/quotes"; 											# GET (POST)
-		self.QUOTES_HISTORICAL_ENDPOINT 	= "v1/markets/history"; 										# GET
-		self.QUOTES_SEARCH_ENDPOINT 		= "v1/markets/search"; 											# GET
-		self.QUOTES_TIMESALES_ENDPOINT 		= "v1/markets/timesales"; 										# GET
+		self.QUOTES_ENDPOINT 				= "v1/markets/quotes" 											# GET (POST)
+		self.QUOTES_HISTORICAL_ENDPOINT 	= "v1/markets/history" 										# GET
+		self.QUOTES_SEARCH_ENDPOINT 		= "v1/markets/search" 											# GET
+		self.QUOTES_TIMESALES_ENDPOINT 		= "v1/markets/timesales" 										# GET
 
 	def get_historical_quotes (self, symbol, interval='daily', start_date=None, end_date=None, verbose=False):
-		'''
+		"""
 		Fetch historical OHLCV bar data for a given security's symbol from the Tradier Account API.
 
 		Args:
@@ -144,41 +144,41 @@ class Quotes (Tradier):
 			31 2024-10-11  5.82  6.00  5.35   5.84      63
 			32 2024-10-14  5.80  5.92  5.62   5.92      26
 			33 2024-10-15  6.70  8.10  6.70   8.00      54
-		'''
+		"""
 
 		#
 		# Ensure that provided symbol is a string in uppercase format
 		#
 
 		if not isinstance(symbol, str):
-			print(f"Symbol argument must be a string. Received: ({symbol}, {type(symbol)})");
-			return pd.DataFrame();
+			print(f"Symbol argument must be a string. Received: ({symbol}, {type(symbol)})")
+			return pd.DataFrame()
 
-		symbol = symbol.upper();
+		symbol = symbol.upper()
 
 		#
 		# Check that the interval is legit (daily, weekly, monthly)
 		#
 
 		if not isinstance(interval, str):
-			print(f"Interval must be string. One of: daily, weekly, monthly");
-			return pd.DataFrame();
+			print("Interval must be string. One of: daily, weekly, monthly")
+			return pd.DataFrame()
 
-		interval = interval.lower();
+		interval = interval.lower()
 		if interval not in ['daily', 'weekly', 'monthly']:
-			print(f"Invalid interval. One of: daily, weekly, monthly");
-			return pd.DataFrame();
+			print("Invalid interval. One of: daily, weekly, monthly")
+			return pd.DataFrame()
 
 		#
 		# Helper function used to index the start of the trading week
 		#
 
 		def last_monday (input_date):
-			''' Hand over last Monday's date '''
+			""" Hand over last Monday's date """
 			if input_date.weekday() == 0:
-				return input_date - timedelta(days=7);
+				return input_date - timedelta(days=7)
 			else:
-				return input_date - timedelta(days=input_date.weekday());
+				return input_date - timedelta(days=input_date.weekday())
 
 		#
 		# Infer the appropriate start/end dates (per interval) if not supplied by user
@@ -190,22 +190,22 @@ class Quotes (Tradier):
 		#
 
 		if end_date is None:
-			end_date = datetime.today().strftime("%Y-%m-%d");
+			end_date = datetime.today().strftime("%Y-%m-%d")
 
 		if start_date is None:
 			if interval == 'monthly':
-				tmp_dt = (datetime.strptime(end_date, '%Y-%m-%d')-timedelta(weeks=52)).replace(day=1);
+				tmp_dt = (datetime.strptime(end_date, '%Y-%m-%d')-timedelta(weeks=52)).replace(day=1)
 			elif interval == 'weekly':
-				tmp_dt = (datetime.strptime(end_date, '%Y-%m-%d')-timedelta(weeks=12));
+				tmp_dt = (datetime.strptime(end_date, '%Y-%m-%d')-timedelta(weeks=12))
 			else:
-				tmp_dt = last_monday(datetime.strptime(end_date, '%Y-%m-%d'));
+				tmp_dt = last_monday(datetime.strptime(end_date, '%Y-%m-%d'))
 
-			start_date = tmp_dt.strftime('%Y-%m-%d');
+			start_date = tmp_dt.strftime('%Y-%m-%d')
 
 		try:
 			if verbose:
-				print("Sending HTTP GET Request...");
-				print(f"HTTP Request Params: (symbol={symbol}, interval={interval}, start={start_date}, end={end_date})\n");
+				print("Sending HTTP GET Request...")
+				print(f"HTTP Request Params: (symbol={symbol}, interval={interval}, start={start_date}, end={end_date})\n")
 
 			#
 			# HTTP GET Request
@@ -215,50 +215,50 @@ class Quotes (Tradier):
 				url  	= f"{self.BASE_URL}/{self.QUOTES_HISTORICAL_ENDPOINT}",
 				params 	= {'symbol':symbol, 'interval':interval, 'start':start_date, 'end':end_date},
 				headers = self.REQUESTS_HEADERS
-			);
-			r.raise_for_status();
+			)
+			r.raise_for_status()
 
-			data = r.json();
+			data = r.json()
 
 			if verbose:
-				print(f"DATA:\n{data}\n");
+				print(f"DATA:\n{data}\n")
 
 			#
 			# Validate the structure of the API Response from Tradier
 			#
 
 			if not data:
-				raise ValueError(f"Empty API Response. Status Code: {r.status_code}");
+				raise ValueError(f"Empty API Response. Status Code: {r.status_code}")
 			if 'history' not in data:
-				raise KeyError(f"API response missing 'history'. Received: {data}");
+				raise KeyError(f"API response missing 'history'. Received: {data}")
 			if data['history'] is None:
-				raise ValueError(f"No historical data for (symbol={symbol}, start_date={start_date}, end_date={end_date})");
+				raise ValueError(f"No historical data for (symbol={symbol}, start_date={start_date}, end_date={end_date})")
 			if 'day' not in data['history']:
-				raise KeyError(f"API Response history data missing 'day': {data}");
+				raise KeyError(f"API Response history data missing 'day': {data}")
 
 
 			#
 			# Extract the sought information from the API response and prepare returned dataframe
 			#
 
-			df = pd.json_normalize(data['history']['day']);
-			df['date'] = pd.to_datetime(df['date']);
+			df = pd.json_normalize(data['history']['day'])
+			df['date'] = pd.to_datetime(df['date'])
 
 			if verbose:
-				print(f"Returning Structure:\n{df.info()}\n");
+				print(f"Returning Structure:\n{df.info()}\n")
 
 			#
 			# Off you go!
 			#
 
-			return df;
+			return df
 
 		except (requests.exceptions.RequestException, ValueError, KeyError) as e:
-			raise RuntimeError(f"[Historical Quotes] ... {e}");
+			raise RuntimeError(f"[Historical Quotes] ... {e}")
 
 
 	def get_quote_day (self, symbol, last_price=False):
-		'''
+		"""
 		Fetch the current quote data for a given symbol from the Tradier Account API.
 
 		Args:
@@ -308,13 +308,13 @@ class Quotes (Tradier):
 			# Retrieve only the last price for symbol 'CCL'
 			last_price = quotes.get_quote_day(symbol='CCL', last_price=True)
 			Sample Output: 15.73
-		'''
+		"""
 
 		if not isinstance(symbol, str):
-			quote_columns = ['symbol', 'description', 'exch', 'type', 'last', 'change', 'volume', 'open', 'high', 'low', 'close', 'bid', 'ask', 'change_percentage', 'average_volume', 'last_volume', 'trade_date', 'prevclose', 'week_52_high', 'week_52_low', 'bidsize', 'bidexch', 'bid_date', 'asksize', 'askexch', 'ask_date', 'root_symbols'];
-			return pd.DataFrame({col:[] for col in quote_columns});
+			quote_columns = ['symbol', 'description', 'exch', 'type', 'last', 'change', 'volume', 'open', 'high', 'low', 'close', 'bid', 'ask', 'change_percentage', 'average_volume', 'last_volume', 'trade_date', 'prevclose', 'week_52_high', 'week_52_low', 'bidsize', 'bidexch', 'bid_date', 'asksize', 'askexch', 'ask_date', 'root_symbols']
+			return pd.DataFrame({col:[] for col in quote_columns})
 
-		symbol = symbol.upper();
+		symbol = symbol.upper()
 
 		try:
 
@@ -322,43 +322,43 @@ class Quotes (Tradier):
 				url 	= f"{self.BASE_URL}/{self.QUOTES_ENDPOINT}",
 				params 	= {'symbols':symbol, 'greeks':'false'},
 				headers = self.REQUESTS_HEADERS
-			);
-			r.raise_for_status();
+			)
+			r.raise_for_status()
 
-			quote_json = r.json();
+			quote_json = r.json()
 			if quote_json is None or 'quotes' not in quote_json:
-				print('API Response Lacks quotes key.');
-				return pd.DataFrame();
+				print('API Response Lacks quotes key.')
+				return pd.DataFrame()
 
-			quote_dict = quote_json['quotes'];
+			quote_dict = quote_json['quotes']
 			if quote_dict is None or 'quote' not in quote_dict:
-				print(f'No quote data for: {symbol}.');
-				return pd.DataFrame();
+				print(f'No quote data for: {symbol}.')
+				return pd.DataFrame()
 
-			quote_data = quote_dict['quote'];
+			quote_data = quote_dict['quote']
 
-			df_quote = pd.json_normalize(quote_data);
+			df_quote = pd.json_normalize(quote_data)
 
 			if last_price:
 				if not isinstance(last_price, bool):
-					print("YO! ... Second argument 'last_price' should be bool.");
+					print("YO! ... Second argument 'last_price' should be bool.")
 				if 'last' not in df_quote:
-					return f"No last price found: {symbol}.";
-				return float(df_quote['last'].iloc[0]);
+					return f"No last price found: {symbol}."
+				return float(df_quote['last'].iloc[0])
 
-			return df_quote;
+			return df_quote
 
 		except requests.exceptions.RequestException as e:
-			return f"API Request Failed: {str(e)}.";
+			return f"API Request Failed: {str(e)}."
 		except ValueError as e:
-			return f"API Response Parse Error: {str(e)}.";
+			return f"API Response Parse Error: {str(e)}."
 		except KeyError as e:
-			return f"Unexpected API Response Structure: {str(e)}.";
+			return f"Unexpected API Response Structure: {str(e)}."
 		except Exception as e:
-			return f"Something has gone terribly wrong: {str(e)}";
+			return f"Something has gone terribly wrong: {str(e)}"
 
 	def get_quote_data (self, symbol_list):
-		'''
+		"""
 		Retrieve a dataframe with current quote data for a specified list of stock symbols.
 		The returned DataFrame can be used to quickly compare properties of different stocks side-by-side.
 
@@ -406,87 +406,87 @@ class Quotes (Tradier):
 			askexch                        N                    Q                            M
 			ask_date           1720726003000        1720726001000                1720726001000
 			root_symbols                   C                  JPM                       GS,GS1
-		'''
+		"""
 
 		#
 		# Sanity check
 		#
 
 		if not symbol_list or symbol_list is None:
-			print('Nothing given nothing gained.');
-			return pd.DataFrame();
+			print('Nothing given nothing gained.')
+			return pd.DataFrame()
 
 		#
 		# For convenience, we'll just convert the singular case to a list
 		#
 
 		if isinstance(symbol_list, str):
-			symbol_list = [symbol_list];
+			symbol_list = [symbol_list]
 
 		#
 		# Check that the user didn't provide junk symbols
 		#
 
-		valid_symbols = [];
+		valid_symbols = []
 		for s in symbol_list:
 			if not isinstance(s, str):
-				print(f"symbols only 'round these parts: {s} ({type(s)})");
+				print(f"symbols only 'round these parts: {s} ({type(s)})")
 			else:
-				valid_symbols.append(s.upper());
+				valid_symbols.append(s.upper())
 
-		str_symbols = ",".join(valid_symbols);
+		str_symbols = ",".join(valid_symbols)
 
 		if not str_symbols:
-			print("No ticker symbols?");
-			return pd.DataFrame();
+			print("No ticker symbols?")
+			return pd.DataFrame()
 
 		try:
 			r = requests.get(
 				url = f"{self.BASE_URL}/{self.QUOTES_ENDPOINT}",
 				params = {"symbols":str_symbols, "greeks":"false"},
 				headers = self.REQUESTS_HEADERS
-			);
-			r.raise_for_status();
+			)
+			r.raise_for_status()
 
-			quotes_json = r.json();
+			quotes_json = r.json()
 
 			if quotes_json is None or 'quotes' not in quotes_json:
-				print("API Response Error [1]: No 'quotes' key");
-				print(quotes_json);
-				return pd.DataFrame();
+				print("API Response Error [1]: No 'quotes' key")
+				print(quotes_json)
+				return pd.DataFrame()
 
-			quotes_dict = quotes_json['quotes'];
+			quotes_dict = quotes_json['quotes']
 
 			if quotes_dict is None or 'quote' not in quotes_dict:
-				print("API Response Error [2]: No 'quote' key");
-				print(quotes_dict);
-				return pd.DataFrame();
+				print("API Response Error [2]: No 'quote' key")
+				print(quotes_dict)
+				return pd.DataFrame()
 
-			quotes_data = quotes_dict['quote'];
+			quotes_data = quotes_dict['quote']
 
 			if not quotes_data:
-				print('No quotes data.');
-				quotes_df = pd.DataFrame();
+				print('No quotes data.')
+				quotes_df = pd.DataFrame()
 			else:
-				quotes_df = pd.json_normalize(quotes_data);
+				quotes_df = pd.json_normalize(quotes_data)
 
-			return quotes_df;
+			return quotes_df
 
 		except requests.exceptions.RequestException as e:
-			print(f'Failed API Request: {str(e)}.');
-			return pd.DataFrame();
+			print(f'Failed API Request: {str(e)}.')
+			return pd.DataFrame()
 		except ValueError as e:
-			print(f"API Response Parse Issue: {str(e)}.");
-			return pd.DataFrame();
+			print(f"API Response Parse Issue: {str(e)}.")
+			return pd.DataFrame()
 		except KeyError as e:
-			print(f"Unexpected API response: {str(e)}.");
-			return pd.DataFrame();
+			print(f"Unexpected API response: {str(e)}.")
+			return pd.DataFrame()
 		except Exception as e:
-			print(f"Something terrible as happened: {str(e)}.");
-			pd.DataFrame();
+			print(f"Something terrible as happened: {str(e)}.")
+			pd.DataFrame()
 
 	def get_timesales (self, symbol, interval='1min', start_time=None, end_time=None):
-		'''
+		"""
 		Retrieve intraday OHLCV bar data for a given stock at a specified time interval.
 
 		Args:
@@ -556,85 +556,85 @@ class Quotes (Tradier):
 			14  2024-10-04T15:30:00  1728070200  32.98000  32.965  33.0100  32.950  33.005   79725  32.983402
 			15  2024-10-04T15:45:00  1728071100  32.93750  33.005  33.0050  32.870  32.880  589946  32.935760
 			16  2024-10-04T16:00:00  1728072000  32.88000  32.880  32.8800  32.880  32.880  928888  32.880000
-		'''
+		"""
 
 		#
 		# Confirm symbol argument
 		#
 
 		if not symbol:
-			raise ValueError("No ticker provided.");
-			return pd.DataFrame();
+			raise ValueError("No ticker provided.")
+			return pd.DataFrame()
 
-		symbol = symbol.upper();
+		symbol = symbol.upper()
 
 		#
 		# Check for valid interval
 		#
 
-		valid_intervals = ['tick', '1min', '5min', '15min'];
+		valid_intervals = ['tick', '1min', '5min', '15min']
 		if interval not in valid_intervals:
-			raise ValueError(f"Invalid Interval. Valid: {', '.join(valid_intervals)}");
-			return pd.DataFrame();
+			raise ValueError(f"Invalid Interval. Valid: {', '.join(valid_intervals)}")
+			return pd.DataFrame()
 
-		r_params = {'symbol':symbol, 'interval':interval};
+		r_params = {'symbol':symbol, 'interval':interval}
 		if start_time is not None:
-			r_params['start'] = start_time;
+			r_params['start'] = start_time
 		if end_time is not None:
-			r_params['end'] = end_time;
+			r_params['end'] = end_time
 
 		try:
 			r = requests.get(
 				url = f"{self.BASE_URL}/{self.QUOTES_TIMESALES_ENDPOINT}",
 				params = r_params,
 				headers = self.REQUESTS_HEADERS
-			);
-			r.raise_for_status();
+			)
+			r.raise_for_status()
 
-			data = r.json();
+			data = r.json()
 
 			if 'series' not in data or 'data' not in data['series']:
-				raise KeyError('ERROR - API Response Missing Data.');
-				return pd.DataFrame();
+				raise KeyError('ERROR - API Response Missing Data.')
+				return pd.DataFrame()
 
-			return pd.json_normalize(r.json()['series']['data']);
+			return pd.json_normalize(r.json()['series']['data'])
 
 		except RequestException as e:
-			raise RequestException(f"ERROR - API Request: {str(e)}");
+			raise RequestException(f"ERROR - API Request: {str(e)}")
 		except KeyError as e:
-			raise KeyError(f"ERROR - API Response Parse: {str(e)}");
+			raise KeyError(f"ERROR - API Response Parse: {str(e)}")
 		except Exception as e:
-			raise Exception(f"ERROR - Unexpected API Response: {str(e)}");
+			raise Exception(f"ERROR - Unexpected API Response: {str(e)}")
 
 	def get_timeseries_plot (self, symbol, plot_var='close', interval='daily', start_date=False, end_date=False):
-		'''
+		"""
 			Construct a time series plot of the dataframe returned by Quotes.get_historical_quotes.
 
 			Args:
 				plot_var (str): lowercase string indicating the bar-data column to put onto the plot ['open', 'high', 'low', 'close', 'volume']
 
 			See help(Quotes.get_historical_quotes) for information about remaining parameters.
-		'''
-		bar_data = self.get_historical_quotes(symbol, interval, start_date, end_date);
-		bar_data['date'] = pd.to_datetime(bar_data['date']);
-		bar_data.set_index('date', inplace=True);
-		plot_str = "{} {} Price".format(symbol.upper(), plot_var[0].upper() + plot_var[1:]);
-		plt.plot(bar_data[plot_var], label=plot_str);
-		plt.title(plot_str);
-		plt.legend();
-		plt.show();
+		"""
+		bar_data = self.get_historical_quotes(symbol, interval, start_date, end_date)
+		bar_data['date'] = pd.to_datetime(bar_data['date'])
+		bar_data.set_index('date', inplace=True)
+		plot_str = "{} {} Price".format(symbol.upper(), plot_var[0].upper() + plot_var[1:])
+		plt.plot(bar_data[plot_var], label=plot_str)
+		plt.title(plot_str)
+		plt.legend()
+		plt.show()
 
 	def search_companies (self, query):
 		if not query:
-			return "Need that search term yo";
+			return "Need that search term yo"
 
 		r = requests.get(
 			url = '{}/{}'.format(self.BASE_URL, self.QUOTES_SEARCH_ENDPOINT),
 			params = {'q': query, 'indexes':'false'},
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
 		if not r.json()['securities']:
-			return "Nothing found";
+			return "Nothing found"
 
-		return pd.DataFrame(r.json()['securities']['security']);
+		return pd.DataFrame(r.json()['securities']['security'])

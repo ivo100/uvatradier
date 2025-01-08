@@ -1,8 +1,6 @@
 from .base import Tradier
 
-from typing import Optional, Dict, Any
 import requests
-import pandas as pd
 import re
 
 
@@ -11,7 +9,7 @@ import re
 #
 
 class InvalidOrderParameterError (Exception):
-	pass;
+	pass
 
 
 #
@@ -19,7 +17,7 @@ class InvalidOrderParameterError (Exception):
 #
 
 class InvalidOCCSymbolError (Exception):
-	pass;
+	pass
 
 
 #
@@ -27,7 +25,7 @@ class InvalidOCCSymbolError (Exception):
 #
 
 class APIRequestError (Exception):
-	pass;
+	pass
 
 
 
@@ -37,13 +35,13 @@ class APIRequestError (Exception):
 
 class OptionsOrder (Tradier):
 	def __init__ (self, account_number, auth_token, live_trade=False):
-		Tradier.__init__(self, account_number, auth_token, live_trade);
+		Tradier.__init__(self, account_number, auth_token, live_trade)
 
 		#
 		# Order endpoint
 		#
 
-		self.ORDER_ENDPOINT = "v1/accounts/{}/orders".format(account_number); # POST
+		self.ORDER_ENDPOINT = "v1/accounts/{}/orders".format(account_number) # POST
 
 
 	#
@@ -51,11 +49,11 @@ class OptionsOrder (Tradier):
 	#
 
 	def bear_put_spread (self, underlying, option0, quantity0, option1, quantity1, duration='day'):
-		'''
+		"""
 			Parameters
 				underlying: asset symbol (e.g. 'SPY')
 				option0: OCC symbol of
-		'''
+		"""
 		r = requests.post(
 			url 	= '{}/{}'.format(self.BASE_URL, self.ORDER_ENDPOINT),
 			data 	= {
@@ -71,9 +69,9 @@ class OptionsOrder (Tradier):
 				'quantity[1]' 		: quantity1
 			},
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
-		return r.json();
+		return r.json()
 
 
 	#
@@ -81,7 +79,7 @@ class OptionsOrder (Tradier):
 	#
 
 	def bear_call_spread (self, underlying, option0, quantity0, option1, quantity1, duration='day'):
-		'''
+		"""
 			Bear call spread example:
 				• XYZ @ $50/share
 				• Pr(XYZ < $55/share) > .50
@@ -98,7 +96,7 @@ class OptionsOrder (Tradier):
 						• short call exercised and must sell at K1 = $55
 						• long call exercised and can buy XYZ at K2 = $60
 						• payoff = (K1-K2) + (premium differential) < 0
-		'''
+		"""
 		r = requests.post(
 			url 	= '{}/{}'.format(self.BASE_URL, self.ORDER_ENDPOINT),
 			data 	= {
@@ -114,9 +112,9 @@ class OptionsOrder (Tradier):
 				'quantity[1]' 		: quantity1
 			},
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
-		return r.json();
+		return r.json()
 
 
 	#
@@ -139,9 +137,9 @@ class OptionsOrder (Tradier):
 				'quantity[1]' 		: quantity_1
 			},
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
-		return r.json();
+		return r.json()
 
 	#
 	# Bull-call spread
@@ -163,27 +161,27 @@ class OptionsOrder (Tradier):
 				'quantity[1]' 		: quantity_1
 			},
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
-		return r.json();
+		return r.json()
 
 
 	def extract_occ_underlying (self, occ_symbol):
 		try:
-			pattern = r'^([A-Z]+(?:[A-Z])?)(?=[0-9]{6}[CP])';
-			match = re.match(pattern, occ_symbol);
+			pattern = r'^([A-Z]+(?:[A-Z])?)(?=[0-9]{6}[CP])'
+			match = re.match(pattern, occ_symbol)
 			if match:
-				underlying = match.group(1);
+				underlying = match.group(1)
 				if underlying:
-					return underlying;
+					return underlying
 				else:
-					return None;
+					return None
 		except Exception as e:
-			raise InvalidOCCSymbolError(f"No underlying extracted for OCC: {occ_symbol}. Error: {str(e)}");
+			raise InvalidOCCSymbolError(f"No underlying extracted for OCC: {occ_symbol}. Error: {str(e)}")
 
 
 	def options_order (self, occ_symbol, order_type, side, quantity, underlying=None, limit_price=None, stop_price=None, duration='day'):
-		'''
+		"""
 		Params:
 			• occ_symbol = options contract (e.g. 'TER230915C00110000')
 			• order_type = The type of order to be placed. One of: market, limit, stop, stop_limit
@@ -204,11 +202,11 @@ class OptionsOrder (Tradier):
 		Example:
 			>>> options_order.options_order(occ_symbol='LMT240119C00260000', order_type='market', side='sell_to_close', quantity=10.0)
 			# Returns: {'order': {'id': 8042606, 'status': 'ok', 'partner_id': '3a8bbee1-5184-4ffe-8a0c-294fbad1aee9'}}
-		'''
+		"""
 
-		valid_order_types = {'market', 'limit', 'stop', 'stop_limit'};
-		valid_sides = {'buy_to_open', 'buy_to_close', 'sell_to_open', 'sell_to_close'};
-		valid_durations = {'day', 'gtc', 'pre', 'post'};
+		valid_order_types = {'market', 'limit', 'stop', 'stop_limit'}
+		valid_sides = {'buy_to_open', 'buy_to_close', 'sell_to_open', 'sell_to_close'}
+		valid_durations = {'day', 'gtc', 'pre', 'post'}
 
 
 		#
@@ -216,15 +214,15 @@ class OptionsOrder (Tradier):
 		#
 
 		if order_type not in valid_order_types:
-			raise InvalidOrderParameterError(f"Bad order_type. Valid: {', '.join(valid_order_types)}");
+			raise InvalidOrderParameterError(f"Bad order_type. Valid: {', '.join(valid_order_types)}")
 		if side not in valid_sides:
-			raise InvalidOrderParameterError(f"Bad side. Valid: {', '.join(valid_sides)}");
+			raise InvalidOrderParameterError(f"Bad side. Valid: {', '.join(valid_sides)}")
 		if duration not in valid_durations:
-			raise InvalidOrderParameterError(f"Bad duration. Valid: {', '.join(valid_durations)}");
+			raise InvalidOrderParameterError(f"Bad duration. Valid: {', '.join(valid_durations)}")
 		if not isinstance(quantity, int):
-			raise InvalidOrderParameterError(f"Quantity non-integer. Valid: positive integer");
+			raise InvalidOrderParameterError("Quantity non-integer. Valid: positive integer")
 		if quantity <= 0:
-			 raise InvalidOrderParameterError(f"Quantity non-positive. Valid: quantity > 0");
+			 raise InvalidOrderParameterError("Quantity non-positive. Valid: quantity > 0")
 
 
 		#
@@ -233,9 +231,9 @@ class OptionsOrder (Tradier):
 
 		if not underlying:
 			try:
-				underlying = self.extract_occ_underlying(occ_symbol);
+				underlying = self.extract_occ_underlying(occ_symbol)
 			except InvalidOCCSymbolError as e:
-				raise InvalidOrderParameterError(f"Bad OCC symbol extraction: {str(e)}");
+				raise InvalidOrderParameterError(f"Bad OCC symbol extraction: {str(e)}")
 
 		r_data = {
 			'class' 		: 'option',
@@ -245,30 +243,30 @@ class OptionsOrder (Tradier):
 			'quantity' 		: quantity,
 			'type' 			: order_type,
 			'duration' 		: duration
-		};
+		}
 
 		if order_type in {'limit', 'stop_limit'}:
 			if limit_price is None or limit_price <= 0:
-				raise InvalidOrderParameterError("Bad (stop) limit price. Valid: [floats] limit_price > 0, stop_price > 0");
-			r_data['price'] = limit_price;
+				raise InvalidOrderParameterError("Bad (stop) limit price. Valid: [floats] limit_price > 0, stop_price > 0")
+			r_data['price'] = limit_price
 
 		if order_type in {'stop', 'stop_limit'}:
 			if stop_price is None or stop_price <= 0:
-				raise InvalidOrderParameterError("Bad (stop) limit price. Valid: [floats] limit_price > 0, stop_price > 0");
-			r_data['stop'] = stop_price;
+				raise InvalidOrderParameterError("Bad (stop) limit price. Valid: [floats] limit_price > 0, stop_price > 0")
+			r_data['stop'] = stop_price
 
 		try:
 			r = requests.post(
 				url = f"{self.BASE_URL}/{self.ORDER_ENDPOINT}",
 				data = r_data,
 				headers = self.REQUESTS_HEADERS
-			);
-			r.raise_for_status();
-			return r.json();
+			)
+			r.raise_for_status()
+			return r.json()
 		except requests.RequestException as e:
-			raise requests.RequestException(f"API Request Failed: {str(e)}");
+			raise requests.RequestException(f"API Request Failed: {str(e)}")
 
-		return r.json();
+		return r.json()
 
 
 	#
@@ -278,7 +276,7 @@ class OptionsOrder (Tradier):
 	#
 
 	def multileg_order (self, occ_symbols, sides, quantities, order_type, limit_price=None, duration='day', underlying=None):
-		'''
+		"""
 		Place a multileg order with up to 4 legs. This order type allows for simple and complex option strategies.
 
 		Params:
@@ -321,60 +319,60 @@ class OptionsOrder (Tradier):
 			# Returned JSON (dict)
 			{'order': {'id': 13121888, 'status': 'ok', 'partner_id': '3a8bbee1-5184-4ffe-8a0c-294fbad1aee9'}}
 
-		'''
+		"""
 
-		valid_order_types = {'market', 'debit', 'credit', 'even'};
-		valid_durations = {'day', 'gtc', 'pre', 'post'};
-		valid_sides = {'buy_to_open', 'buy_to_close', 'sell_to_open', 'sell_to_close'};
+		valid_order_types = {'market', 'debit', 'credit', 'even'}
+		valid_durations = {'day', 'gtc', 'pre', 'post'}
+		valid_sides = {'buy_to_open', 'buy_to_close', 'sell_to_open', 'sell_to_close'}
 
 		#
 		# Fleece the input arguments to check that they are valid/conform to Tradier's specs for multileg trade.
 		#
 
 		if not all(isinstance(occ, str) for occ in occ_symbols):
-			raise InvalidOrderParameterError("Bad symbols. OCCs for options must be strings.");
+			raise InvalidOrderParameterError("Bad symbols. OCCs for options must be strings.")
 
 
 		if not all(side in valid_sides for side in sides):
-			raise InvalidOrderParameterError(f"Bad order side. Valid: {', '.join(valid_sides)}");
+			raise InvalidOrderParameterError(f"Bad order side. Valid: {', '.join(valid_sides)}")
 
 		if not all(isinstance(quantity, int) and quantity > 0 for quantity in quantities):
-			raise InvalidOrderParameterError("Bad quantity. Valid: [int] quantities > 0");
+			raise InvalidOrderParameterError("Bad quantity. Valid: [int] quantities > 0")
 
 		if len(occ_symbols) != len(sides) or len(occ_symbols) != len(quantities):
-			print('Need to pass the same number for: occ_symbols, quantities, sides');
-			return dict();
+			print('Need to pass the same number for: occ_symbols, quantities, sides')
+			return dict()
 
 		if order_type not in valid_order_types:
-			raise InvalidOrderParameterError(f"Bad order type. Valid: {', '.join(valid_order_types)}");
+			raise InvalidOrderParameterError(f"Bad order type. Valid: {', '.join(valid_order_types)}")
 
 		if duration not in valid_durations:
-			raise InvalidOrderParameterError(f"Bad duration. Valid: {', '.join(valid_durations)}");
+			raise InvalidOrderParameterError(f"Bad duration. Valid: {', '.join(valid_durations)}")
 
 		if order_type in {'debit', 'credit'} and (limit_price is None or limit_price <= 0):
-			raise InvalidOrderParameterError("Bad limit price. Valid: [float] limit_price > 0");
+			raise InvalidOrderParameterError("Bad limit price. Valid: [float] limit_price > 0")
 
 
 		if not underlying:
 			try:
-				underlying = self.extract_occ_underlying(occ_symbols[0]);
+				underlying = self.extract_occ_underlying(occ_symbols[0])
 			except Exception as e:
-				raise InvalidOrderParameterError(f"Bad OCC Symbol extraction: {str(e)}");
+				raise InvalidOrderParameterError(f"Bad OCC Symbol extraction: {str(e)}")
 
 		r_data = {
 			'class': 'multileg',
 			'duration':duration,
 			'type':order_type,
 			'symbol':underlying
-		};
+		}
 
 		if limit_price is not None:
-			r_data['price'] = str(limit_price);
+			r_data['price'] = str(limit_price)
 
 		for i, (occ, side, quantity) in enumerate(zip(occ_symbols, sides, quantities)):
-			r_data[f"option_symbol[{i}]"] = occ;
-			r_data[f"side[{i}]"] = side;
-			r_data[f"quantity[{i}]"] = str(quantity);
+			r_data[f"option_symbol[{i}]"] = occ
+			r_data[f"side[{i}]"] = side
+			r_data[f"quantity[{i}]"] = str(quantity)
 
 
 		#
@@ -386,19 +384,19 @@ class OptionsOrder (Tradier):
 				url = f"{self.BASE_URL}/{self.ORDER_ENDPOINT}",
 				data = r_data,
 				headers = self.REQUESTS_HEADERS
-			);
-			r.raise_for_status();
+			)
+			r.raise_for_status()
 
 		except requests.RequestException as e:
 			if e.response is not None:
 				try:
-					e_msg = f"Failed API Request: {str(e)}";
-					e_msg += f"\nDetails: {e.response.json()}";
+					e_msg = f"Failed API Request: {str(e)}"
+					e_msg += f"\nDetails: {e.response.json()}"
 				except ValueError:
-					e_msg += f"\nResponse: {e.response.text}";
-			raise APIRequestError(e_msg);
+					e_msg += f"\nResponse: {e.response.text}"
+			raise APIRequestError(e_msg)
 
-		return r.json();
+		return r.json()
 
 	#
 	# Combination Order

@@ -3,21 +3,21 @@ from .base import Tradier
 import requests
 import pandas as pd
 import re
-from datetime import datetime, timedelta;
+from datetime import datetime, timedelta
 
 
 class OptionsData (Tradier):
 	def __init__ (self, account_number, auth_token, live_trade=False):
-		Tradier.__init__(self, account_number, auth_token, live_trade);
+		Tradier.__init__(self, account_number, auth_token, live_trade)
 
 		#
 		# Option data endpoints
 		#
 
-		self. OPTIONS_STRIKE_ENDPOINT 	= "v1/markets/options/strikes"; 							# GET
-		self. OPTIONS_CHAIN_ENDPOINT 	= "v1/markets/options/chains"; 								# GET
-		self. OPTIONS_EXPIRY_ENDPOINT 	= "v1/markets/options/expirations"; 						# GET
-		self. OPTIONS_SYMBOL_ENDPOINT 	= "v1/markets/options/lookup"; 								# GET
+		self. OPTIONS_STRIKE_ENDPOINT 	= "v1/markets/options/strikes" 							# GET
+		self. OPTIONS_CHAIN_ENDPOINT 	= "v1/markets/options/chains" 								# GET
+		self. OPTIONS_EXPIRY_ENDPOINT 	= "v1/markets/options/expirations" 						# GET
+		self. OPTIONS_SYMBOL_ENDPOINT 	= "v1/markets/options/lookup" 								# GET
 
 
 	#
@@ -25,17 +25,17 @@ class OptionsData (Tradier):
 	#
 
 	def get_chain_day (self, symbol, expiry='', strike=False, strike_low=False, strike_high=False, option_type=False):
-		'''
+		"""
 			This function returns option chain data for a given symbol.
 			All contract expirations occur on the same expiry date
-		'''
+		"""
 
 		#
 		# Set the contract expiration date to the nearest valid date
 		#
 
 		if not expiry:
-			expiry = self.get_expiry_dates(symbol)[0];
+			expiry = self.get_expiry_dates(symbol)[0]
 
 		#
 		# Define request object for given symbol and expiration
@@ -45,36 +45,36 @@ class OptionsData (Tradier):
 			url 	= f"{self.BASE_URL}/{self.OPTIONS_CHAIN_ENDPOINT}",
 			params 	= {'symbol':symbol, 'expiration':expiry, 'greeks':'false'},
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
 		#
 		# Convert returned json -> pandas dataframe
 		#
 
-		option_df = pd.DataFrame(r.json()['options']['option']);
+		option_df = pd.DataFrame(r.json()['options']['option'])
 
 
 		#
 		# Remove columns which have the same value for every row
 		#
 
-		cols_to_drop = option_df.nunique()[option_df.nunique() == 1].index;
-		option_df = option_df.drop(cols_to_drop, axis=1);
+		cols_to_drop = option_df.nunique()[option_df.nunique() == 1].index
+		option_df = option_df.drop(cols_to_drop, axis=1)
 
 		#
 		# Remove columns which have NaN in every row
 		#
 
-		cols_to_drop = option_df.nunique()[option_df.nunique() == 0].index;
-		option_df = option_df.drop(cols_to_drop, axis=1);
+		cols_to_drop = option_df.nunique()[option_df.nunique() == 0].index
+		option_df = option_df.drop(cols_to_drop, axis=1)
 
 
 		#
 		# Remove description column because its information is redundant
 		#
 
-		cols_to_drop = ['description'];
-		option_df = option_df.drop(cols_to_drop, axis=1);
+		cols_to_drop = ['description']
+		option_df = option_df.drop(cols_to_drop, axis=1)
 
 
 		#
@@ -82,27 +82,27 @@ class OptionsData (Tradier):
 		#
 
 		if strike_low:
-			option_df = option_df.query('strike >= @strike_low');
+			option_df = option_df.query('strike >= @strike_low')
 
 		if strike_high:
-			option_df = option_df.query('strike <= @strike_high');
+			option_df = option_df.query('strike <= @strike_high')
 
 		if strike:
-			option_df = option_df.query('strike == @strike');
+			option_df = option_df.query('strike == @strike')
 
 		if option_type in ['call', 'put']:
-			option_df = option_df.query('option_type == @option_type');
+			option_df = option_df.query('option_type == @option_type')
 
 
 		if option_type:
 			if option_type in ['call', 'put']:
-				option_df = option_df.query('option_type == @option_type');
+				option_df = option_df.query('option_type == @option_type')
 
 		#
 		# Return the resulting dataframe whose rows are individual contracts with expiration `expiry`
 		#
 
-		return option_df;
+		return option_df
 
 
 	#
@@ -110,7 +110,7 @@ class OptionsData (Tradier):
 	#
 
 	def get_closest_expiry (self, symbol, num_days):
-		'''
+		"""
 			This function returns the maturity date nearest to a fixed number of days into the future.
 			It is well suited to quickly retrieve the necessary maturity date once you've decided on your trading time-frame.
 			For example, if you want to trade mid-term contracts, you might set the num_days argument to 30.
@@ -127,19 +127,19 @@ class OptionsData (Tradier):
 				>>> options_data = OptionsData(tradier_acct, tradier_token)
 				>>> options_data.get_closest_expiry(symbol='XOM', num_days=30)
 				'2024-08-02'
-		'''
-		expiry_dates = self.get_expiry_dates(symbol);
-		todays_date = datetime.now();
-		future_date = todays_date + timedelta(days=num_days);
-		expiries_dt = [datetime.strptime(d, "%Y-%m-%d") for d in expiry_dates];
-		closest_expiry = min(expiries_dt, key=lambda date: abs(date-future_date));
+		"""
+		expiry_dates = self.get_expiry_dates(symbol)
+		todays_date = datetime.now()
+		future_date = todays_date + timedelta(days=num_days)
+		expiries_dt = [datetime.strptime(d, "%Y-%m-%d") for d in expiry_dates]
+		closest_expiry = min(expiries_dt, key=lambda date: abs(date-future_date))
 
-		return closest_expiry.strftime("%Y-%m-%d");
+		return closest_expiry.strftime("%Y-%m-%d")
 
 
 
 	def get_expiry_dates (self, symbol, strikes=False):
-		'''
+		"""
 		Get the expiry dates for options on a given symbol.
 
 		Args:
@@ -171,43 +171,43 @@ class OptionsData (Tradier):
 
 				{'date': '2025-05-16', 'strikes': {'strike': [185.0, 190.0, 195.0, 200.0, 210.0, 220.0, 230.0, 240.0, 250.0, 260.0, 270.0, 280.0, 290.0, 300.0, 310.0, 320.0, 330.0, 340.0, 350.0, 360.0, 370.0, 380.0, 390.0, 400.0, 410.0, 420.0, 430.0, 440.0, 450.0, 460.0, 470.0, 480.0, 490.0, 500.0, 520.0, 540.0, 560.0]}}
 			]}
-		'''
+		"""
 
 		try:
 			r = requests.get(
 				url 	= f"{self.BASE_URL}/{self.OPTIONS_EXPIRY_ENDPOINT}",
 				params 	= {'symbol':symbol, 'includeAllRoots':True, 'strikes':str(strikes)},
 				headers = self.REQUESTS_HEADERS
-			);
-			r.raise_for_status();
+			)
+			r.raise_for_status()
 		except requests.exceptions.RequestException as e:
-			raise RuntimeError(f"No expiries for {symbol}: {str(e)}.");
+			raise RuntimeError(f"No expiries for {symbol}: {str(e)}.")
 
 		try:
-			response_data = r.json()['expirations'];
+			response_data = r.json()['expirations']
 		except KeyError:
-			raise ValueError(f"API Response Error. No expirations: {r.json()}");
+			raise ValueError(f"API Response Error. No expirations: {r.json()}")
 
 		if not response_data:
-			print(f"No expiries: {symbol}");
-			return list();
+			print(f"No expiries: {symbol}")
+			return list()
 
 		if not strikes:
-			return response_data['date'];
+			return response_data['date']
 
-		return response_data;
+		return response_data
 
 		if r.status_code != 200:
-			return 'wtf';
+			return 'wtf'
 
-		expiry_dict = r.json()['expirations'];
+		expiry_dict = r.json()['expirations']
 
 		# Without strikes, we can get a list of dates
 		if strikes == False:
-			return expiry_dict['date'];
+			return expiry_dict['date']
 
 		# Otherwise, return a list whose elements are dicts with format {'date':[list_of_strikes]}
-		return expiry_dict['expiration'];
+		return expiry_dict['expiration']
 
 
 	#
@@ -228,7 +228,7 @@ class OptionsData (Tradier):
 	# ##########################
 
 	def get_options_symbols (self, symbol, df=False):
-		'''
+		"""
 			This function provides a convenient wrapper to fetch option symbols
 			for a specified symbol
 
@@ -238,21 +238,21 @@ class OptionsData (Tradier):
 			If df=True, then a pandas.DataFrame object is returned.
 			Each row of the dataframe represents a single put or call contract.
 			The first column is the OCC symbol. The subsequent columns are the parsed values of the OCC symbol.
-		'''
+		"""
 
 		#
 		# Helper function to convert the get_option_symbols list into a dataframe
 		#
 
 		def symbol_list_to_df (option_list):
-			'''
+			"""
 				This is a helper function called from get_option_symbols.
 				It will parse a list of option symbols into their constituent components
 				For example:
 					option_symbol
 						= [underlying_symbol, expiry_date, option_type, option_id]
 						= [LMT, 240119, C, 00300000]
-			'''
+			"""
 			parsed_options = []
 
 			for option in option_list:
@@ -260,35 +260,35 @@ class OptionsData (Tradier):
 				if match:
 					root_symbol, expiration_date, option_type, strike_price = match.groups()
 					parsed_options.append({'symbol':option,'root_symbol':root_symbol, 'expiration_date':expiration_date, 'option_type':option_type, 'strike_price':strike_price})
-			return pd.DataFrame(parsed_options);
+			return pd.DataFrame(parsed_options)
 		
 		
 		#
 		# Helper function to turn the option dates into standard date format
 		#
 		def parse_option_expiries (expiry_list):
-			'''
+			"""
 				Helper function to turn the option dates into standard date format
-			'''
+			"""
 
-			formatted_expiries = [];
+			formatted_expiries = []
 			for x in expiry_list:
-				formatted_expiries.append(datetime.strptime(x, '%y%m%d').strftime('%Y-%m-%d'));
+				formatted_expiries.append(datetime.strptime(x, '%y%m%d').strftime('%Y-%m-%d'))
 
-			return formatted_expiries;
+			return formatted_expiries
 
 
 		r = requests.get(
 			url 		= f"{self.BASE_URL}/{self.OPTIONS_SYMBOL_ENDPOINT}",
 			params 		= {'underlying':symbol},
 			headers 	= self.REQUESTS_HEADERS
-		);
+		)
 
-		option_list = r.json()['symbols'][0]['options'];
+		option_list = r.json()['symbols'][0]['options']
 
 		if df:
-			option_df = symbol_list_to_df(option_list);
-			option_df['expiration_date'] = parse_option_expiries(option_df['expiration_date']);
-			return option_df;
+			option_df = symbol_list_to_df(option_list)
+			option_df['expiration_date'] = parse_option_expiries(option_df['expiration_date'])
+			return option_df
 
-		return option_list;
+		return option_list

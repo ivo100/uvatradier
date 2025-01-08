@@ -2,8 +2,10 @@
 # Example - Using uvatradier to fetch quote data for a given symbol
 #
 
-import os, dotenv
-from uvatradier import Tradier, Quotes
+import os
+import dotenv
+from uvatradier import Quotes
+from icecream import ic
 
 # Create .env file within current working directory.
 # Add the following to your .env file. Specify the correct account number and authorization token for your quote.
@@ -12,12 +14,33 @@ from uvatradier import Tradier, Quotes
 
 dotenv.load_dotenv()
 
-tradier_acct = os.getenv('tradier_acct')
-tradier_token = os.getenv('tradier_token')
+live = False
+if os.getenv('live'):
+    s = os.getenv('live')
+    if s.upper().startswith("T"):
+        live = True
+
+ic(live)
+
+prefix = "tradier"
+if not live:
+    prefix = f"t_{prefix}"
+
+acct = os.getenv(f"{prefix}_acct")
+token = os.getenv(f"{prefix}_token")
+assert acct
+assert token
 
 # Initializing new Quotes object
-quotes = Quotes(tradier_acct, tradier_token);
+Q = Quotes(acct, token, live_trade=live)
+sym = 'AAPL'
+q = Q.get_quote_day(sym)
+ic(q)
 
-test_quote = quotes.get_quote_day('KO')
+ts = Q.get_timesales(
+    sym,
+    interval="5min",
+    start_time="2025-01-07T09:30:00",
+    end_time="2025-01-07T16:00:00")
 
-print(test_quote)
+ic(ts)

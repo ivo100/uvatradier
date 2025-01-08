@@ -1,9 +1,9 @@
 from .base import Tradier
-import requests;
-import time;
-import asyncio;
-import websockets;
-import json;
+import requests
+import time
+import asyncio
+import websockets
+import json
 
 class Stream (Tradier):
 	"""
@@ -34,15 +34,15 @@ class Stream (Tradier):
 		- auth_token (str): The authorization token for API access.
 		- live_trade (bool): Flag to indicate if the stream is for live trading or simulation.
 		"""
-		Tradier.__init__(self, account_number, auth_token, live_trade);
+		Tradier.__init__(self, account_number, auth_token, live_trade)
 
 		#
 		# Define Streaming Endpoints
 		#
 
-		self.MARKET_STREAM_ENDPOINT = "v1/markets/events/session";
-		self.ACCOUNT_STREAM_ENDPOINT = "v1/accounts/events/session";
-		self.MARKET_EVENTS_STREAM_ENDPOINT = "v1/markets/events";
+		self.MARKET_STREAM_ENDPOINT = "v1/markets/events/session"
+		self.ACCOUNT_STREAM_ENDPOINT = "v1/accounts/events/session"
+		self.MARKET_EVENTS_STREAM_ENDPOINT = "v1/markets/events"
 
 
 	#
@@ -69,7 +69,7 @@ class Stream (Tradier):
 			# Stream Kinder Morgan Inc. quotes and trade events with line break separating each event
 			stream.stream_market_events(symbol_list=['KMI'], filter_list=['trade', 'quote'], line_break=True)
 		"""
-		asyncio.run(self.ws_market_connect(symbol_list, filter_list, line_break, valid_ticks_only, advanced_details));
+		asyncio.run(self.ws_market_connect(symbol_list, filter_list, line_break, valid_ticks_only, advanced_details))
 
 
 	#
@@ -89,28 +89,28 @@ class Stream (Tradier):
 		"""
 		while True:
 			try:
-				r = requests.post(url=f"{self.BASE_URL}/{self.MARKET_STREAM_ENDPOINT}", headers=self.REQUESTS_HEADERS);
-				r.raise_for_status();
+				r = requests.post(url=f"{self.BASE_URL}/{self.MARKET_STREAM_ENDPOINT}", headers=self.REQUESTS_HEADERS)
+				r.raise_for_status()
 
-				session_info = r.json();
+				session_info = r.json()
 
 				# print("API RESPONSE: ", session_info);
 
 				if 'stream' not in session_info:
-					print("Error - session_info lacks 'stream'.");
-					time.sleep(10);
-					continue;
+					print("Error - session_info lacks 'stream'.")
+					time.sleep(10)
+					continue
 
 				if 'sessionid' not in session_info['stream']:
-					print("Error - 'stream' not in session_info.stream.");
-					time.sleep(10);
-					continue;
+					print("Error - 'stream' not in session_info.stream.")
+					time.sleep(10)
+					continue
 
-				return session_info['stream']['sessionid'];
+				return session_info['stream']['sessionid']
 
 			except requests.RequestException as e:
-				print(f"API Error: {e}.");
-				time.sleep(10);
+				print(f"API Error: {e}.")
+				time.sleep(10)
 
 
 	#
@@ -131,30 +131,30 @@ class Stream (Tradier):
 
 		Once connected, sends the specified parameters as a payload and listens for incoming messages.
 		"""
-		session_id = self.http_market_stream_connect();
+		session_id = self.http_market_stream_connect()
 		try:
-			print(f"Connecting to websocket at {self.WEBSOCKET_URL}/{self.MARKET_EVENTS_STREAM_ENDPOINT} with sessionid {session_id}");
+			print(f"Connecting to websocket at {self.WEBSOCKET_URL}/{self.MARKET_EVENTS_STREAM_ENDPOINT} with sessionid {session_id}")
 			async with websockets.connect(uri=f"{self.WEBSOCKET_URL}/{self.MARKET_EVENTS_STREAM_ENDPOINT}", ssl=True, compression=None) as websocket:
 				payload_json = {
 					'symbols': symbol_list,
 					'sessionid': session_id,
 					'linebreak': line_break,
 					'advancedDetails': advanced_details
-				};
+				}
 				if filter_list is not None and isinstance(filter_list, list):
-					payload_json['filter'] = filter_list;
+					payload_json['filter'] = filter_list
 
-				payload = json.dumps(payload_json);
+				payload = json.dumps(payload_json)
 
-				print(f"Sending: {payload}\n");
+				print(f"Sending: {payload}\n")
 
-				await websocket.send(payload);
+				await websocket.send(payload)
 				async for message in websocket:
-					print(message);
+					print(message)
 
 		except websockets.ConnectionClosedError as e:
-			print(f"Websocket connection closed but idk why: {e}.");
+			print(f"Websocket connection closed but idk why: {e}.")
 		except websockets.WebSocketException as e:
-			print(f"WebSocket error: {e}.");
+			print(f"WebSocket error: {e}.")
 		except Exception as e:
-			print(f"Unexpected error: {e}.");
+			print(f"Unexpected error: {e}.")

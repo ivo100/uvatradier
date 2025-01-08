@@ -1,25 +1,25 @@
-import os;
-import dotenv;
-import requests;
-import numpy as np;
-import pandas as pd;
+import os
+from dotenv import load_dotenv
+import requests
 
-import datetime;
-from datetime import datetime, timedelta; 	# for fetching option expiries
-import re; 									# parsing option symbols into constituent components
+import pandas as pd
 
-import schedule;
-import time;
+import datetime
+from datetime import datetime, timedelta 	# for fetching option expiries
+import re 									# parsing option symbols into constituent components
 
-dotenv.load_dotenv();
+
+
+
+load_dotenv()
 
 
 #
 # Fetch account credentials
 #
 
-ACCOUNT_NUMBER 	= os.getenv('tradier_acct');
-AUTH_TOKEN 		= os.getenv('tradier_token');
+ACCOUNT_NUMBER 	= os.getenv('tradier_acct')
+AUTH_TOKEN 		= os.getenv('tradier_token')
 
 
 class Tradier:
@@ -29,8 +29,8 @@ class Tradier:
 		# Define account credentials
 		#
 
-		self.ACCOUNT_NUMBER 	= account_number;
-		self.AUTH_TOKEN 		= auth_token;
+		self.ACCOUNT_NUMBER 	= account_number
+		self.AUTH_TOKEN 		= auth_token
 		self.REQUESTS_HEADERS 	= {'Authorization':'Bearer {}'.format(self.AUTH_TOKEN), 'Accept':'application/json'}
 
 		
@@ -38,35 +38,35 @@ class Tradier:
 		# Define base url for paper trading and individual API endpoints
 		#
 
-		self.SANDBOX_URL = 'https://sandbox.tradier.com';
+		self.SANDBOX_URL = 'https://sandbox.tradier.com'
 
 
 
 class Account (Tradier):
 	def __init__ (self, account_number, auth_token):
-		Tradier.__init__(self, account_number, auth_token);
+		Tradier.__init__(self, account_number, auth_token)
 		
 		#
 		# Account endpoints
 		#
 
-		self.PROFILE_ENDPOINT = "v1/user/profile"; 													# GET
+		self.PROFILE_ENDPOINT = "v1/user/profile" 													# GET
 
-		self.POSITIONS_ENDPOINT = "v1/accounts/{}/positions".format(ACCOUNT_NUMBER); 				# GET
-
-
-		self.ACCOUNT_BALANCE_ENDPOINT 	= "v1/accounts/{}/balances".format(ACCOUNT_NUMBER); 		# GET
-		self.ACCOUNT_GAINLOSS_ENDPOINT 	= "v1/accounts/{}/gainloss".format(ACCOUNT_NUMBER);  		# GET
-		self.ACCOUNT_HISTORY_ENDPOINT 	= "v1/accounts/{}/history".format(ACCOUNT_NUMBER); 			# GET
-		self.ACCOUNT_POSITIONS_ENDPOINT = "v1/accounts/{}/positions".format(ACCOUNT_NUMBER); 		# GET
-
-		self.ACCOUNT_INDIVIDUAL_ORDER_ENDPOINT = "v1/accounts/{account_id}/orders/{order_id}"; 		# GET
+		self.POSITIONS_ENDPOINT = "v1/accounts/{}/positions".format(ACCOUNT_NUMBER) 				# GET
 
 
-		self.ORDER_ENDPOINT = "v1/accounts/{}/orders".format(ACCOUNT_NUMBER); 						# GET
+		self.ACCOUNT_BALANCE_ENDPOINT 	= "v1/accounts/{}/balances".format(ACCOUNT_NUMBER) 		# GET
+		self.ACCOUNT_GAINLOSS_ENDPOINT 	= "v1/accounts/{}/gainloss".format(ACCOUNT_NUMBER)  		# GET
+		self.ACCOUNT_HISTORY_ENDPOINT 	= "v1/accounts/{}/history".format(ACCOUNT_NUMBER) 			# GET
+		self.ACCOUNT_POSITIONS_ENDPOINT = "v1/accounts/{}/positions".format(ACCOUNT_NUMBER) 		# GET
+
+		self.ACCOUNT_INDIVIDUAL_ORDER_ENDPOINT = "v1/accounts/{account_id}/orders/{order_id}" 		# GET
+
+
+		self.ORDER_ENDPOINT = "v1/accounts/{}/orders".format(ACCOUNT_NUMBER) 						# GET
 
 	def get_user_profile(self):
-		'''
+		"""
 		Fetch the user profile information from the Tradier Account API.
 
 		This function makes a GET request to the Tradier Account API to retrieve the user profile
@@ -93,18 +93,18 @@ class Account (Tradier):
 			account.status                 	active
 			account.type                   	margin
 			account.last_update_date 		2021-06-23T22:04:20.000Z
-		'''
+		"""
 		r = requests.get(
 			url 	= '{}/{}'.format(self.SANDBOX_URL, self.PROFILE_ENDPOINT),
 			params 	= {},
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
-		return pd.json_normalize(r.json()['profile']);
+		return pd.json_normalize(r.json()['profile'])
 
 
 	def get_account_balance(self):
-		'''
+		"""
 		Fetch the account balance information from the Tradier Account API.
 
 		This function makes a GET request to the Tradier Account API to retrieve the account
@@ -146,18 +146,18 @@ class Account (Tradier):
 			margin.stock_buying_power  77839.68
 			margin.stock_short_value       0
 			margin.sweep                   0
-		'''
+		"""
 		r = requests.get(
 			url 	= '{}/{}'.format(self.SANDBOX_URL, self.ACCOUNT_BALANCE_ENDPOINT),
 			params 	= {},
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
-		return pd.json_normalize(r.json()['balances']);
+		return pd.json_normalize(r.json()['balances'])
 
 
 	def get_gainloss (self):
-		'''
+		"""
 			Get cost basis information for a specific user account.
 			This includes information for all closed positions.
 			Cost basis information is updated through a nightly batch reconciliation process with tradier clearing firm.
@@ -173,18 +173,18 @@ class Account (Tradier):
 				2  2023-09-13T00:00:00.000Z    2300.0      175.0               7.61  2023-08-24T00:00:00.000Z    2475.0       1.0  HAL251219C00018000    20
 				3  2023-09-13T00:00:00.000Z   20700.0     1620.0               7.83  2023-08-24T00:00:00.000Z   22320.0       9.0  HAL251219C00018000    20
 				4  2023-09-06T00:00:00.000Z   16967.0     -193.0              -1.14  2023-09-01T00:00:00.000Z   16774.0     100.0                 TXN     5
-		'''
+		"""
 		r = requests.get(
 			url = '{}/{}'.format(self.SANDBOX_URL, self.ACCOUNT_GAINLOSS_ENDPOINT),
 			params = {},
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
-		return pd.json_normalize(r.json()['gainloss']['closed_position']);
+		return pd.json_normalize(r.json()['gainloss']['closed_position'])
 
 
 	def get_orders (self):
-		'''
+		"""
 			This function returns a pandas DataFrame.
 			Each row denotes a queued order. Each column contiains a feature_variable pertaining to the order.
 			Transposed sample output has the following structure:
@@ -208,20 +208,20 @@ class Account (Tradier):
 			create_date         2023-09-25T20:29:10.351Z  2023-09-26T14:45:00.155Z
 			transaction_date    2023-09-26T12:30:19.152Z  2023-09-26T14:45:00.216Z
 			class                                 equity                    equity
-		'''
+		"""
 
 		r = requests.get(
 			url='{}/{}'.format(self.SANDBOX_URL, self.ORDER_ENDPOINT),
 			params={'includeTags':'true'},
 			headers=self.REQUESTS_HEADERS
-		);
+		)
 
 		# return pd.DataFrame(r.json()['orders']);
-		return pd.json_normalize(r.json()['orders']['order']);
+		return pd.json_normalize(r.json()['orders']['order'])
 
 
 	def get_positions(self, symbols=False, equities=False, options=False):
-		'''
+		"""
 		Fetch and filter position data from the Tradier Account API.
 
 		This function makes a GET request to the Tradier Account API to retrieve position
@@ -255,36 +255,36 @@ class Account (Tradier):
 
 			# Retrieve only options
 			options_positions = get_positions(options=True)
-		'''
-		r = requests.get(url='{}/{}'.format(self.SANDBOX_URL, self.ACCOUNT_POSITIONS_ENDPOINT), params={}, headers=self.REQUESTS_HEADERS);
+		"""
+		r = requests.get(url='{}/{}'.format(self.SANDBOX_URL, self.ACCOUNT_POSITIONS_ENDPOINT), params={}, headers=self.REQUESTS_HEADERS)
 		if r.json():
-			positions_df = pd.DataFrame(r.json()['positions']['position']);
+			positions_df = pd.DataFrame(r.json()['positions']['position'])
 			if symbols:
-				positions_df = positions_df.query('symbol in @symbols');
+				positions_df = positions_df.query('symbol in @symbols')
 			if equities:
-				positions_df = positions_df[positions_df['symbol'].str.len() < 5];
-				options = False;
+				positions_df = positions_df[positions_df['symbol'].str.len() < 5]
+				options = False
 			if options:
-				positions_df = positions_df[positions_df['symbol'].str.len() > 5];
-			return positions_df;
+				positions_df = positions_df[positions_df['symbol'].str.len() > 5]
+			return positions_df
 
 
 class Quotes (Tradier):
 	def __init__ (self, account_number, auth_token):
-		Tradier.__init__(self, account_number, auth_token);
+		Tradier.__init__(self, account_number, auth_token)
 
 		#
 		# Quotes endpoints for market data about equities
 		#
 
-		self.QUOTES_ENDPOINT 				= "v1/markets/quotes"; 											# GET (POST)
-		self.QUOTES_HISTORICAL_ENDPOINT 	= "v1/markets/history"; 										# GET
-		self.QUOTES_SEARCH_ENDPOINT 		= "v1/markets/search"; 											# GET
-		self.QUOTES_TIMESALES_ENDPOINT 		= "v1/markets/timesales"; 										# GET
+		self.QUOTES_ENDPOINT 				= "v1/markets/quotes" 											# GET (POST)
+		self.QUOTES_HISTORICAL_ENDPOINT 	= "v1/markets/history" 										# GET
+		self.QUOTES_SEARCH_ENDPOINT 		= "v1/markets/search" 											# GET
+		self.QUOTES_TIMESALES_ENDPOINT 		= "v1/markets/timesales" 										# GET
 
 	def get_historical_quotes (self, symbol, interval='daily', start_date=False, end_date=False):
 
-		'''
+		"""
 		Fetch historical stock data for a given symbol from the Tradier Account API.
 
 		This function makes a GET request to the Tradier Account API to retrieve historical stock
@@ -316,14 +316,14 @@ class Quotes (Tradier):
 			2  2023-08-30  268.84  269.460  265.25  267.18   552728
 			3  2023-08-31  266.83  269.175  265.32  267.36  1012842
 			4  2023-09-01  269.01  269.720  266.91  267.17   522401
-		'''
+		"""
 
 		#
 		# Helper function used to index the start of the trading week
 		#
 
 		def last_monday (input_date):
-			'''
+			"""
 			Find the date of the previous Monday for a given input date.
 
 			Args:
@@ -331,16 +331,16 @@ class Quotes (Tradier):
 
 			Returns:
 				datetime.date: The date of the previous Monday.
-			'''
+			"""
 
-			return (input_date - timedelta(days=(input_date.weekday())));
+			return (input_date - timedelta(days=(input_date.weekday())))
 
 		if not end_date:
-			end_date = datetime.today().strftime('%Y-%m-%d');
+			end_date = datetime.today().strftime('%Y-%m-%d')
 
 		if not start_date:
-			tmp = datetime.strptime(end_date, '%Y-%m-%d');
-			start_date = last_monday(tmp).strftime('%Y-%m-%d');
+			tmp = datetime.strptime(end_date, '%Y-%m-%d')
+			start_date = last_monday(tmp).strftime('%Y-%m-%d')
 
 		r = requests.get(
 			url 	= '{}/{}'.format(self.SANDBOX_URL, self.QUOTES_HISTORICAL_ENDPOINT),
@@ -351,12 +351,12 @@ class Quotes (Tradier):
 				'end' 		: end_date
 			},
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
-		return pd.DataFrame(r.json()['history']['day']);
+		return pd.DataFrame(r.json()['history']['day'])
 
 	def get_quote_day (self, symbol, last_price=False):
-		'''
+		"""
 		Fetch the current quote data for a given symbol from the Tradier Account API.
 
 		This function makes a GET request to the Tradier Account API to retrieve the current quote
@@ -408,30 +408,31 @@ class Quotes (Tradier):
 			# Retrieve only the last price for symbol 'CCL'
 			last_price = q.get_quote_day(symbol='CCL', last_price=True)
 			Sample Output: 15.73
-		'''
+		"""
 
 		r = requests.get(
 			url 	= '{}/{}'.format(self.SANDBOX_URL, self.QUOTES_ENDPOINT),
 			params 	= {'symbols':symbol, 'greeks':'false'},
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
-		df_quote = pd.json_normalize(r.json()['quotes']['quote']);
+		df_quote = pd.json_normalize(r.json()['quotes']['quote'])
 
 		if last_price:
-			return float(df_quote['last']);
+			return float(df_quote['last'])
 
-		return df_quote;
+		return df_quote
 
 	def get_timesales (self, symbol, interval='1min', start_time=False, end_time=False):
-		'''
+		"""
 			This function returns the tick data for `symbol` in increments specified by `interval`.
 			Eventually, we can use this to analyze/visualze stock data in a time series context.
 
-			Arguments `start_time` and `end_time` must be strings with format 'YYYY-MM-DD HH:MM'
+			Arguments `start_time` and `end_time` must be strings with format 'YYYY-MM-DDTHH:MM:00'
+			Avoid spaces as they may cause problems
 
 			Sample output:
-				>>> quotes.get_timesales('VZ', start_time='2023-09-27 09:45', end_time='2023-09-27 14:00')
+				>> quotes.get_timesales('VZ', start_time='2023-09-27T09:45:00', end_time='2023-09-27T14:00:00')
 				                    time   timestamp     price     open     high      low   close  volume       vwap
 				0    2023-09-27T09:45:00  1695822300  32.92995  32.9500  32.9500  32.9099  32.915   39077  32.924828
 				1    2023-09-27T09:46:00  1695822360  32.89560  32.9112  32.9112  32.8800  32.895   32867  32.891113
@@ -446,57 +447,57 @@ class Quotes (Tradier):
 				255  2023-09-27T14:00:00  1695837600  32.38750  32.3866  32.3950  32.3800  32.385   53837  32.386281
 
 				(vwap = volume weighted average price during the interval)
-		'''
-		r_params = {'symbol':symbol};
+		"""
+		r_params = {'symbol':symbol}
 		if start_time:
-			r_params['start'] = start_time;
+			r_params['start'] = start_time
 		if end_time:
-			r_params['end'] = end_time;
+			r_params['end'] = end_time
 
 		r = requests.get(
 			url = '{}/{}'.format(self.SANDBOX_URL, self.QUOTES_TIMESALES_ENDPOINT),
 			params = r_params,
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
-		return pd.json_normalize(r.json()['series']['data']);
+		return pd.json_normalize(r.json()['series']['data'])
 
 
 	def search_companies (self, query):
 		if not query:
-			return "Need that search term yo";
+			return "Need that search term yo"
 
 		r = requests.get(
 			url = '{}/{}'.format(self.SANDBOX_URL, self.QUOTES_SEARCH_ENDPOINT),
 			params = {'q': query, 'indexes':'false'},
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
 		if not r.json()['securities']:
-			return "Nothing found";
+			return "Nothing found"
 
-		return pd.DataFrame(r.json()['securities']['security']);
+		return pd.DataFrame(r.json()['securities']['security'])
 
 
 
 
 class EquityOrder (Tradier):
 	def __init__ (self, account_number, auth_token):
-		Tradier.__init__(self, account_number, auth_token);
+		Tradier.__init__(self, account_number, auth_token)
 
 		#
 		# Order endpoint
 		#
 
-		self.ORDER_ENDPOINT = "v1/accounts/{}/orders".format(self.ACCOUNT_NUMBER); # POST
+		self.ORDER_ENDPOINT = "v1/accounts/{}/orders".format(self.ACCOUNT_NUMBER) # POST
 
 	def order (self, symbol, side, quantity, order_type, duration='day', limit_price=False, stop_price=False):
-		'''
+		"""
 			Example of how to run:
-				>>> eo = EquityOrder(ACCOUNT_NUMBER, AUTH_TOKEN)
-				>>> eo.order(symbol='QQQ', side='buy', quantity=10, order_type='market', duration='gtc');
+				>> eo = EquityOrder(ACCOUNT_NUMBER, AUTH_TOKEN)
+				>> eo.order(symbol='QQQ', side='buy', quantity=10, order_type='market', duration='gtc');
 				{'order': {'id': 8256590, 'status': 'ok', 'partner_id': '3a8bbee1-5184-4ffe-8a0c-294fbad1aee9'}}
-		'''
+		"""
 
 		#
 		# Define initial requests parameters dictionary whose fields are applicable to all order_type values
@@ -509,38 +510,38 @@ class EquityOrder (Tradier):
 			'quantity' 	: quantity,
 			'type' 		: order_type,
 			'duration' 	: duration
-		};
+		}
 
 		#
 		# If the order_type is limit, stop, or stop_limit --> Set the appropriate limit price or stop price
 		#
 
 		if order_type.lower() in ['limit', 'stop_limit']:
-			r_params['price'] = limit_price;
+			r_params['price'] = limit_price
 		if order_type.lower() in ['stop', 'stop_limit']:
-			r_params['stop'] = stop_price;
+			r_params['stop'] = stop_price
 
 		r = requests.post(
 			url = '{}/{}'.format(self.SANDBOX_URL, self.ORDER_ENDPOINT),
 			params = r_params,
 			headers=self.REQUESTS_HEADERS
-		);
+		)
 
-		return r.json();
+		return r.json()
 
 
 class OptionsData (Tradier):
 	def __init__ (self, account_number, auth_token):
-		Tradier.__init__(self, account_number, auth_token);
+		Tradier.__init__(self, account_number, auth_token)
 
 		#
 		# Option data endpoints
 		#
 
-		self. OPTIONS_STRIKE_ENDPOINT 	= "v1/markets/options/strikes"; 							# GET
-		self. OPTIONS_CHAIN_ENDPOINT 	= "v1/markets/options/chains"; 								# GET
-		self. OPTIONS_EXPIRY_ENDPOINT 	= "v1/markets/options/expirations"; 						# GET
-		self. OPTIONS_SYMBOL_ENDPOINT 	= "v1/markets/options/lookup"; 								# GET
+		self. OPTIONS_STRIKE_ENDPOINT 	= "v1/markets/options/strikes" 							# GET
+		self. OPTIONS_CHAIN_ENDPOINT 	= "v1/markets/options/chains" 								# GET
+		self. OPTIONS_EXPIRY_ENDPOINT 	= "v1/markets/options/expirations" 						# GET
+		self. OPTIONS_SYMBOL_ENDPOINT 	= "v1/markets/options/lookup" 								# GET
 
 
 	#
@@ -548,17 +549,17 @@ class OptionsData (Tradier):
 	#
 
 	def get_chain_day (self, symbol, expiry='', strike=False, strike_low=False, strike_high=False, option_type=False):
-		'''
+		"""
 			This function returns option chain data for a given symbol.
 			All contract expirations occur on the same expiry date
-		'''
+		"""
 
 		#
 		# Set the contract expiration date to the nearest valid date
 		#
 
 		if not expiry:
-			expiry = self.get_expiry_dates(symbol)[0];
+			expiry = self.get_expiry_dates(symbol)[0]
 
 		#
 		# Define request object for given symbol and expiration
@@ -568,36 +569,36 @@ class OptionsData (Tradier):
 			url 	= '{}/{}'.format(self.SANDBOX_URL, self.OPTIONS_CHAIN_ENDPOINT),
 			params 	= {'symbol':symbol, 'expiration':expiry, 'greeks':'false'},
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
 		#
 		# Convert returned json -> pandas dataframe
 		#
 
-		option_df = pd.DataFrame(r.json()['options']['option']);
+		option_df = pd.DataFrame(r.json()['options']['option'])
 
 
 		#
 		# Remove columns which have the same value for every row
 		#
 
-		cols_to_drop = option_df.nunique()[option_df.nunique() == 1].index;
-		option_df = option_df.drop(cols_to_drop, axis=1);
+		cols_to_drop = option_df.nunique()[option_df.nunique() == 1].index
+		option_df = option_df.drop(cols_to_drop, axis=1)
 
 		#
 		# Remove columns which have NaN in every row
 		#
 
-		cols_to_drop = option_df.nunique()[option_df.nunique() == 0].index;
-		option_df = option_df.drop(cols_to_drop, axis=1);
+		cols_to_drop = option_df.nunique()[option_df.nunique() == 0].index
+		option_df = option_df.drop(cols_to_drop, axis=1)
 
 
 		#
 		# Remove description column because its information is redundant
 		#
 
-		cols_to_drop = ['description'];
-		option_df = option_df.drop(cols_to_drop, axis=1);
+		cols_to_drop = ['description']
+		option_df = option_df.drop(cols_to_drop, axis=1)
 
 
 		#
@@ -605,31 +606,31 @@ class OptionsData (Tradier):
 		#
 
 		if strike_low:
-			option_df = option_df.query('strike >= @strike_low');
+			option_df = option_df.query('strike >= @strike_low')
 
 		if strike_high:
-			option_df = option_df.query('strike <= @strike_high');
+			option_df = option_df.query('strike <= @strike_high')
 
 		if strike:
-			option_df = option_df.query('strike == @strike');
+			option_df = option_df.query('strike == @strike')
 
 		if option_type in ['call', 'put']:
-			option_df = option_df.query('option_type == @option_type');
+			option_df = option_df.query('option_type == @option_type')
 
 
 		if option_type:
 			if option_type in ['call', 'put']:
-				option_df = option_df.query('option_type == @option_type');
+				option_df = option_df.query('option_type == @option_type')
 
 		#
 		# Return the resulting dataframe whose rows are individual contracts with expiration `expiry`
 		#
 
-		return option_df;
+		return option_df
 
 
 	def get_expiry_dates (self, symbol, strikes=False):
-		'''
+		"""
 		Get the expiry dates for options on a given symbol.
 
 		Args:
@@ -641,31 +642,31 @@ class OptionsData (Tradier):
 			If strikes=True 	-> returns a list of dictionaries with expiry date and associated strike prices.
 
 		Example:
-			>>> options = OptionsData(ACCOUNT_NUMBER, AUTH_TOKEN)
-			>>> options.get_expiry_dates(symbol='DFS')
+			>> options = OptionsData(ACCOUNT_NUMBER, AUTH_TOKEN)
+			>> options.get_expiry_dates(symbol='DFS')
 			['2023-09-08', '2023-09-15', '2023-09-22', '2023-09-29', '2023-10-06', '2023-10-13', '2023-10-20', '2023-11-17', '2024-01-19', '2024-04-19', '2024-06-21', '2025-01-17']
 
 			>>> options.get_expiry_dates(symbol='DFS', strikes=True)
 			[{'date': '2023-09-08', 'strikes': {'strike': [59.0, 60.0, 61.0, ...]}, {'date': '2023-09-15', 'strikes': {'strike': [55.0, 60.0, ...}}, ...]
-		'''
+		"""
 
 		r = requests.get(
 			url 	= '{}/{}'.format(self.SANDBOX_URL, self.OPTIONS_EXPIRY_ENDPOINT),
 			params 	= {'symbol':symbol, 'includeAllRoots':True, 'strikes':str(strikes)},
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
 		if r.status_code != 200:
-			return 'wtf';
+			return 'wtf'
 
-		expiry_dict = r.json()['expirations'];
+		expiry_dict = r.json()['expirations']
 
 		# Without strikes, we can get a list of dates
 		if strikes == False:
-			return expiry_dict['date'];
+			return expiry_dict['date']
 
 		# Otherwise, return a list whose elements are dicts with format {'date':[list_of_strikes]}
-		return expiry_dict['expiration'];
+		return expiry_dict['expiration']
 
 
 	#
@@ -686,7 +687,7 @@ class OptionsData (Tradier):
 	# ##########################
 
 	def get_options_symbols (self, symbol, df=False):
-		'''
+		"""
 			This function provides a convenient wrapper to fetch option symbols
 			for a specified symbol
 
@@ -696,21 +697,21 @@ class OptionsData (Tradier):
 			If df=True, then a pandas.DataFrame object is returned.
 			Each row of the dataframe represents a single put or call contract.
 			The first column is the OCC symbol. The subsequent columns are the parsed values of the OCC symbol.
-		'''
+		"""
 
 		#
 		# Helper function to convert the get_option_symbols list into a dataframe
 		#
 
 		def symbol_list_to_df (option_list):
-			'''
+			"""
 				This is a helper function called from get_option_symbols.
 				It will parse a list of option symbols into their constituent components
 				For example:
 					option_symbol
 						= [underlying_symbol, expiry_date, option_type, option_id]
 						= [LMT, 240119, C, 00300000]
-			'''
+			"""
 			parsed_options = []
 
 			for option in option_list:
@@ -718,49 +719,49 @@ class OptionsData (Tradier):
 				if match:
 					root_symbol, expiration_date, option_type, strike_price = match.groups()
 					parsed_options.append({'symbol':option,'root_symbol':root_symbol, 'expiration_date':expiration_date, 'option_type':option_type, 'strike_price':strike_price})
-			return pd.DataFrame(parsed_options);
+			return pd.DataFrame(parsed_options)
 		
 		
 		#
 		# Helper function to turn the option dates into standard date format
 		#
 		def parse_option_expiries (expiry_list):
-			'''
+			"""
 				Helper function to turn the option dates into standard date format
-			'''
+			"""
 
-			formatted_expiries = [];
+			formatted_expiries = []
 			for x in expiry_list:
-				formatted_expiries.append(datetime.strptime(x, '%y%m%d').strftime('%Y-%m-%d'));
+				formatted_expiries.append(datetime.strptime(x, '%y%m%d').strftime('%Y-%m-%d'))
 
-			return formatted_expiries;
+			return formatted_expiries
 
 
 		r = requests.get(
 			url 		= '{}/{}'.format(self.SANDBOX_URL, self.OPTIONS_SYMBOL_ENDPOINT),
 			params 		= {'underlying':symbol},
 			headers 	= self.REQUESTS_HEADERS
-		);
+		)
 
-		option_list = r.json()['symbols'][0]['options'];
+		option_list = r.json()['symbols'][0]['options']
 
 		if df:
-			option_df = symbol_list_to_df(option_list);
-			option_df['expiration_date'] = parse_option_expiries(option_df['expiration_date']);
-			return option_df;
+			option_df = symbol_list_to_df(option_list)
+			option_df['expiration_date'] = parse_option_expiries(option_df['expiration_date'])
+			return option_df
 
-		return option_list;
+		return option_list
 
 
 class OptionsOrder (Tradier):
 	def __init__ (self, account_number, auth_token):
-		Tradier.__init__(self, account_number, auth_token);
+		Tradier.__init__(self, account_number, auth_token)
 
 		#
 		# Order endpoint
 		#
 
-		self.ORDER_ENDPOINT = "v1/accounts/{}/orders".format(ACCOUNT_NUMBER); # POST
+		self.ORDER_ENDPOINT = "v1/accounts/{}/orders".format(ACCOUNT_NUMBER) # POST
 
 
 	#
@@ -768,11 +769,11 @@ class OptionsOrder (Tradier):
 	#
 
 	def bear_put_spread (self, underlying, option0, quantity0, option1, quantity1, duration='day'):
-		'''
+		"""
 			Parameters
 				underlying: asset symbol (e.g. 'SPY')
 				option0: OCC symbol of
-		'''
+		"""
 		r = requests.post(
 			url 	= '{}/{}'.format(self.SANDBOX_URL, self.ORDER_ENDPOINT),
 			data 	= {
@@ -788,9 +789,9 @@ class OptionsOrder (Tradier):
 				'quantity[1]' 		: quantity1
 			},
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
-		return r.json();
+		return r.json()
 
 
 	#
@@ -798,7 +799,7 @@ class OptionsOrder (Tradier):
 	#
 
 	def bear_call_spread (self, underlying, option0, quantity0, option1, quantity1, duration='day'):
-		'''
+		"""
 			Bear call spread example:
 				• XYZ @ $50/share
 				• Pr(XYZ < $55/share) > .50
@@ -815,7 +816,7 @@ class OptionsOrder (Tradier):
 						• short call exercised and must sell at K1 = $55
 						• long call exercised and can buy XYZ at K2 = $60
 						• payoff = (K1-K2) + (premium differential) < 0
-		'''
+		"""
 		r = requests.post(
 			url 	= '{}/{}'.format(self.SANDBOX_URL, self.ORDER_ENDPOINT),
 			data 	= {
@@ -831,9 +832,9 @@ class OptionsOrder (Tradier):
 				'quantity[1]' 		: quantity1
 			},
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
-		return r.json();
+		return r.json()
 
 
 
@@ -857,9 +858,9 @@ class OptionsOrder (Tradier):
 				'quantity[1]' 		: quantity_1
 			},
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
-		return r.json();
+		return r.json()
 
 	#
 	# Bull-call spread
@@ -881,22 +882,22 @@ class OptionsOrder (Tradier):
 				'quantity[1]' 		: quantity_1
 			},
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
-		return r.json();
+		return r.json()
 
 
 	# def extract_stock_symbol (self, occ_symbol):
 	def extract_occ_underlying (self, occ_symbol):
-		match = re.match(r'^([A-Z]){1,4}\d', occ_symbol);
+		match = re.match(r'^([A-Z]){1,4}\d', occ_symbol)
 		if match:
-			return match.group(1);
+			return match.group(1)
 		else:
-			return None;
+			return None
 
 
 	def options_order (self, occ_symbol, order_type, side, quantity, underlying=False, limit_price=False, stop_price=False, duration='day'):
-		'''
+		"""
 		Params:
 			• occ_symbol = options contract (e.g. 'TER230915C00110000')
 			• order_type = The type of order to be placed. One of: market, limit, stop, stop_limit
@@ -917,9 +918,9 @@ class OptionsOrder (Tradier):
 		Example:
 			>>> options_order.options_order(occ_symbol='LMT240119C00260000', order_type='market', side='sell_to_close', quantity=10.0)
 			# Returns: {'order': {'id': 8042606, 'status': 'ok', 'partner_id': '3a8bbee1-5184-4ffe-8a0c-294fbad1aee9'}}
-		'''
+		"""
 		if not underlying:
-			underlying = self.extract_occ_underlying(occ_symbol);
+			underlying = self.extract_occ_underlying(occ_symbol)
 
 		r_data = {
 			'class' 		: 'option',
@@ -929,36 +930,36 @@ class OptionsOrder (Tradier):
 			'quantity' 		: quantity,
 			'type' 			: order_type,
 			'duration' 		: duration
-		};
+		}
 
 		if order_type in ['limit', 'stop_limit']:
 			if not limit_price:
-				print('Need limit price.');
-				return None;
-			r_data['price'] = limit_price;
+				print('Need limit price.')
+				return None
+			r_data['price'] = limit_price
 		if order_type in ['stop', 'stop_limit']:
 			if not stop_price:
-				print('Need stop price.');
-				return None;
-			r_data['stop'] = stop_price;
+				print('Need stop price.')
+				return None
+			r_data['stop'] = stop_price
 
 		r = requests.post(
 			url = '{}/{}'.format(self.SANDBOX_URL, self.ORDER_ENDPOINT),
 			data = r_data,
 			headers = self.REQUESTS_HEADERS
-		);
+		)
 
-		return r.json();
+		return r.json()
 
 
 #
 # Initialize objects for testing
 #
 
-account = Account(ACCOUNT_NUMBER, AUTH_TOKEN);
-quotes 	= Quotes(ACCOUNT_NUMBER, AUTH_TOKEN);
-options = OptionsData(ACCOUNT_NUMBER, AUTH_TOKEN);
+account = Account(ACCOUNT_NUMBER, AUTH_TOKEN)
+quotes 	= Quotes(ACCOUNT_NUMBER, AUTH_TOKEN)
+options = OptionsData(ACCOUNT_NUMBER, AUTH_TOKEN)
 
 
-equity_order 	= EquityOrder(ACCOUNT_NUMBER, AUTH_TOKEN);
-options_order 	= OptionsOrder(ACCOUNT_NUMBER, AUTH_TOKEN);
+equity_order 	= EquityOrder(ACCOUNT_NUMBER, AUTH_TOKEN)
+options_order 	= OptionsOrder(ACCOUNT_NUMBER, AUTH_TOKEN)
