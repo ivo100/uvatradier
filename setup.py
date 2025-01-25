@@ -6,7 +6,7 @@ with open('README.md', 'r', encoding='utf-8') as fh:
 
 setup(
 	name='uvatradier',
-	version='0.4.8',
+	version='0.4.9',
 	author='tom hammons',
 	description='tradier python wrapper',
 	long_description=long_description,
@@ -20,7 +20,7 @@ setup(
 		'python-dotenv>=1.0',
 		'pandas>=1.0',
         'matplotlib>=3.0',
-		"websockets~=14.1",
+		"websockets~=10.1",
         'asyncio'  			# asyncio is included in the standard library for Python 3.7 and later - unneeded if using these versions.
     ]
 )
