@@ -24,7 +24,7 @@ class OptionsData (Tradier):
 	# Fetch all option chain data for a single day of contract expirations
 	#
 
-	def get_chain_day (self, symbol, expiry='', strike=False, strike_low=False, strike_high=False, option_type=False):
+	def get_chain_day (self, symbol, expiry='', strike=False, strike_low=False, strike_high=False, option_type=False, greeks=False):
 		"""
 			This function returns option chain data for a given symbol.
 			All contract expirations occur on the same expiry date
@@ -43,30 +43,25 @@ class OptionsData (Tradier):
 
 		r = requests.get(
 			url 	= f"{self.BASE_URL}/{self.OPTIONS_CHAIN_ENDPOINT}",
-			params 	= {'symbol':symbol, 'expiration':expiry, 'greeks':'false'},
+			params 	= {'symbol':symbol, 'expiration':expiry, 'greeks':str(greeks)},
 			headers = self.REQUESTS_HEADERS
 		)
 
 		#
 		# Convert returned json -> pandas dataframe
 		#
-
-		option_df = pd.DataFrame(r.json()['options']['option'])
-
-
-		#
-		# Remove columns which have the same value for every row
-		#
-
-		cols_to_drop = option_df.nunique()[option_df.nunique() == 1].index
-		option_df = option_df.drop(cols_to_drop, axis=1)
-
-		#
-		# Remove columns which have NaN in every row
-		#
-
-		cols_to_drop = option_df.nunique()[option_df.nunique() == 0].index
-		option_df = option_df.drop(cols_to_drop, axis=1)
+		option_df = pd.json_normalize(r.json()['options']['option'])
+		if not greeks:
+			#
+			# Remove columns which have the same value for every row
+			#
+			cols_to_drop = option_df.nunique()[option_df.nunique() == 1].index
+			option_df = option_df.drop(cols_to_drop, axis=1)
+			#
+			# Remove columns which have NaN in every row
+			#
+			cols_to_drop = option_df.nunique()[option_df.nunique() == 0].index
+			option_df = option_df.drop(cols_to_drop, axis=1)
 
 
 		#
@@ -90,8 +85,8 @@ class OptionsData (Tradier):
 		if strike:
 			option_df = option_df.query('strike == @strike')
 
-		if option_type in ['call', 'put']:
-			option_df = option_df.query('option_type == @option_type')
+		# if option_type in ['call', 'put']:
+		# 	option_df = option_df.query('option_type == @option_type')
 
 
 		if option_type:
