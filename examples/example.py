@@ -4,7 +4,8 @@
 
 import os
 import dotenv
-from uvatradier import Quotes, Account, OptionsData
+
+from uvatradier import Quotes, Account, OptionsData, Companies
 from icecream import ic
 
 # Create .env file within current working directory.
@@ -45,7 +46,8 @@ def example1():
         end_time="2025-03-13T16:00:00")
     ic(ts)
 
-def example2(sym: str = 'SPX', dte: int=1):
+
+def example2(sym: str = 'SPY', dte: int=1):
     Q = Quotes(acct, token, live_trade=live)
     q = Q.get_quote_day(sym)
     r = q.iloc[0]
@@ -62,7 +64,7 @@ def example2(sym: str = 'SPX', dte: int=1):
     """
 
     opt = OptionsData(acct, token, live_trade=live)
-    exp = opt.get_closest_expiry(sym, 1)
+    exp = opt.get_closest_expiry(sym, 5)
     ic(exp)
     # chains = opt.get_chain_day(sym, exp)
     # ic(chains.columns)
@@ -130,82 +132,20 @@ def example3():
     balance = account.get_account_balance(return_as_series=True)
     ic(balance)
     ic(balance.pdt)
-    """
-ic| balance: option_short_value                                                      0
-             total_equity                                                     27361.29
-             account_number                                                   6YA43254
-             account_type                                                          pdt
-             close_pl                                                                0
-             current_requirement                                             13745.465
-             equity                                                                  0
-             long_market_value                                                27490.93
-             market_value                                                     27490.93
-             open_pl                                                             -3.07
-             option_long_value                                                       0
-             option_requirement                                                      0
-             pending_orders_count                                                    0
-             short_market_value                                                      0
-             stock_long_value                                                 27490.93
-             total_cash                                                        -129.64
-             uncleared_funds                                                         0
-             pending_cash                                                            0
-             pdt                     {'day_trade_buying_power': 81963.44, 'fed_call...
-             dtype: object
-ic| balance.pdt: {'day_trade_buying_power': 81963.44,
-                  'fed_call': 0,
-                  'maintenance_call': 0,
-                  'option_buying_power': 13617.36,
-                  'stock_buying_power': 27234.72,
-                  'stock_short_value': 0}
-    """
+
+def example4(sym: str = 'AAPL'):
+    C = Companies(acct, token, live_trade=live)
+    f = C.get_fundamentals(sym)
+    print(f)
+    market_cap = float(f["statistics"]["valuation"]["market_cap"])
+    print(market_cap)
+
 
 if __name__ == "__main__":
     #example1()
-    example2("SPX")
+    #example2("SPY")
     #example3()
+    example4()
 
 
-    """
-    columns
-    ['symbol', 'exch', 'type', 'last', 'change', 'volume', 'open', 'high',
-     'low', 'close', 'bid', 'ask', 'underlying', 'strike',
-     'change_percentage', 'average_volume', 'last_volume', 'trade_date',
-     'prevclose', 'week_52_high', 'week_52_low', 'bidsize', 'bidexch',
-     'bid_date', 'asksize', 'askexch', 'ask_date', 'open_interest',
-     'contract_size', 'expiration_date', 'expiration_type', 'option_type',
-     'root_symbol', 'greeks.delta', 'greeks.gamma', 'greeks.theta',
-     'greeks.vega', 'greeks.rho', 'greeks.phi', 'greeks.bid_iv',
-     'greeks.mid_iv', 'greeks.ask_iv', 'greeks.smv_vol',
-     'greeks.updated_at']
-    """
-    """
-    ic(chains.columns)
-    ic(chains.head)
-    greeks0 = chains.iloc[0].greeks
-    ic(greeks0)
-
-    columns:
-    ['symbol', 'description', 'exch', 'type', 'last', 'change', 'volume',
-       'open', 'high', 'low', 'close', 'bid', 'ask', 'underlying', 'strike',
-       'change_percentage', 'average_volume', 'last_volume', 'trade_date',
-       'prevclose', 'week_52_high', 'week_52_low', 'bidsize', 'bidexch',
-       'bid_date', 'asksize', 'askexch', 'ask_date', 'open_interest',
-       'contract_size', 'expiration_date', 'expiration_type', 'option_type',
-       'root_symbol', 'greeks.delta', 'greeks.gamma', 'greeks.theta',
-       'greeks.vega', 'greeks.rho', 'greeks.phi', 'greeks.bid_iv',
-       'greeks.mid_iv', 'greeks.ask_iv', 'greeks.smv_vol',
-       'greeks.updated_at']
-
-        greeks0: {'ask_iv': 0.0,
-              'bid_iv': 0.0,
-              'delta': -2e-16,
-              'gamma': 4.29706989974587e-15,
-              'mid_iv': 0.0,
-              'phi': -0.00755461485368869,
-              'rho': 0.004803504986134591,
-              'smv_vol': 0.271,
-              'theta': -0.0,
-              'updated_at': '2025-03-13 19:59:55',
-              'vega': 1.9999992225407817e-05}
-    """
 

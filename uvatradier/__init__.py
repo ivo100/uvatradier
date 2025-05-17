@@ -5,6 +5,7 @@ from .equity_order import EquityOrder
 from .options_data import OptionsData
 from .options_order import OptionsOrder
 from .stream import Stream
+from .companies import Companies
 
 __all__ = [
     "Account",
@@ -14,4 +15,5 @@ __all__ = [
     "OptionsData",
     "OptionsOrder",
     "Stream",
+    "Companies"
 ]
